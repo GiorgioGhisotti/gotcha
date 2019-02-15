@@ -43,6 +43,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 	private RecognitionStateReceiver mRecognitionStateReceiver;
 	private String proto;
 	private String weights;
+	private int count = 0;
+	private Detection detection;
+	private Mat subFrame;
 	
 	// Initialize OpenCV manager.
 	private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
@@ -56,6 +59,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 					IntentFilter recognitionIntentFilter = new IntentFilter("com.example.android.threadsample.BROADCAST");
 					LocalBroadcastManager.getInstance(getApplicationContext())
 							.registerReceiver(mRecognitionStateReceiver, recognitionIntentFilter);
+					detection = new Detection();
+					subFrame = new Mat(0,0,0);
 					break;
 				}
 				default: {
@@ -102,28 +107,35 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 		final int IN_WIDTH = 300;
 		final int IN_HEIGHT = 300;
 		final float WH_RATIO = (float)IN_WIDTH / IN_HEIGHT;
-		final double IN_SCALE_FACTOR = 0.007843;
-		final double MEAN_VAL = 127.5;
 		final double THRESHOLD = 0.2;
 		
 		// Get a new frame
 		Mat frame = inputFrame.rgba();
 		Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGBA2RGB);
-		
-		SerializableNet serNet = new SerializableNet();
-		serNet.setNet(net);
-		Intent frameIntent = new Intent();
-		frameIntent.putExtra("frame", frame.getNativeObjAddr());
-		frameIntent.putExtra("proto", proto);
-		frameIntent.putExtra("weights", weights);
-		
-		recognitionHandler.enqueueWork(getApplicationContext(), frameIntent);
+
+		if (this.count < mRecognitionStateReceiver.getMessageCount()) {
+			this.count = mRecognitionStateReceiver.getMessageCount();
+			this.detection.release();
+			this.detection = mRecognitionStateReceiver.getDetection();
+
+			Intent frameIntent = new Intent();
+			frameIntent.putExtra("net", net.getNativeObjAddr());
+			frameIntent.putExtra("frame", frame.getNativeObjAddr());
+
+			recognitionHandler.enqueueWork(getApplicationContext(), frameIntent);
+		}
+
+//		try{
+//			Thread.sleep(10_000);
+//		} catch (InterruptedException ex) {
+//			System.out.println(ex);
+//		}
 		// Forward image through network.
-		Mat blob = Dnn.blobFromImage(frame, IN_SCALE_FACTOR,
-				new Size(IN_WIDTH, IN_HEIGHT),
-				new Scalar(MEAN_VAL, MEAN_VAL, MEAN_VAL), false);
-		net.setInput(blob);
-		Mat detections = net.forward();
+//		Mat blob = Dnn.blobFromImage(frame, IN_SCALE_FACTOR,
+//				new Size(IN_WIDTH, IN_HEIGHT),
+//				new Scalar(MEAN_VAL, MEAN_VAL, MEAN_VAL), false);
+//		net.setInput(blob);
+//		Mat detections = net.forward();
 		int cols = frame.cols();
 		int rows = frame.rows();
 		Size cropSize;
@@ -136,11 +148,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 		int y2 = (int)(y1 + cropSize.height);
 		int x1 = (int)(cols - cropSize.width) / 2;
 		int x2 = (int)(x1 + cropSize.width);
-		Mat subFrame = frame.submat(y1, y2, x1, x2);
+		subFrame.release();
+		subFrame = frame.submat(y1, y2, x1, x2);
 		cols = subFrame.cols();
 		rows = subFrame.rows();
-		System.out.println("Detections total: " + detections.total());
-		detections = detections.reshape(1, (int)detections.total() / 7);
+
+		Mat detections = detection.getDetected();
 		for (int i = 0; i < detections.rows(); ++i) {
 			double confidence = detections.get(i, 2)[0];
 			if (confidence > THRESHOLD) {
@@ -166,7 +179,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 						Core.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar(0, 0, 0));
 			}
 		}
-		return frame;    }
+//		detections.release();
+		return frame;
+	}
 	
 	private static String getPath(String file, Context context) {
 		AssetManager assetManager = context.getAssets();

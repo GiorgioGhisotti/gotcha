@@ -5,13 +5,13 @@ import org.opencv.dnn.Net
 import java.io.Serializable
 
 class Detection : Serializable {
-    var rect : Mat = Mat(0,0,0)
-    var label : String = ""
-    var confidence : Double = 0.0
+    var detected : Mat = Mat(0,0,0)
     var frame : Mat = Mat(0,0,0)
     var subFrame : Mat = Mat(0,0,0)
-}
 
-class SerializableNet : Serializable {
-    var net : Net? = null
+    fun release() {
+        this.detected.release()
+        this.frame.release()
+        this.subFrame.release()
+    }
 }
