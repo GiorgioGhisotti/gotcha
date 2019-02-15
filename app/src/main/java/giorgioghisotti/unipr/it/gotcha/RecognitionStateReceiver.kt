@@ -7,11 +7,10 @@ import android.content.Intent
 class RecognitionStateReceiver : BroadcastReceiver() {
 
     private var detection: Detection = Detection()
-    private var messageCount: Int = 1
+    private var messageCount: Int = 1   //Used to determine if a given computation has finished
 
     override fun onReceive(context: Context?, intent: Intent?) {
         if (intent != null) {
-            System.out.println("*************\n\nRECEIVED DETECTIONS\n\n*************")
             this.detection = intent.getSerializableExtra(DETECTIONS) as Detection
             System.out.println(detection.subFrame.cols())
         }

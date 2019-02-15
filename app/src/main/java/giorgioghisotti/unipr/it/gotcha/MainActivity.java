@@ -30,6 +30,12 @@ import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
 	
+	public static final float FONT_SCALE = (float)1.0;
+	public static final double THRESHOLD = 0.2;
+	public static final int IN_WIDTH = 300;
+	public static final int IN_HEIGHT = 300;
+	public static final float WH_RATIO = (float)IN_WIDTH / IN_HEIGHT;
+	
 	private static final RecognitionHandler recognitionHandler = new RecognitionHandler();
 	private static final String TAG = "OpenCV/Sample/MobileNet";
 	private static final String[] classNames = {"background",
@@ -41,8 +47,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 	private Net net;
 	private CameraBridgeViewBase mOpenCvCameraView;
 	private RecognitionStateReceiver mRecognitionStateReceiver;
-	private String proto;
-	private String weights;
 	private int count = 0;
 	private Detection detection;
 	private Mat subFrame;
@@ -90,8 +94,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 	
 	@Override
 	public void onCameraViewStarted(int width, int height) {
-		this.proto = getPath("MobileNetSSD_deploy.prototxt", this);
-		this.weights = getPath("mobilenet.caffemodel", this);
+		String proto = getPath("MobileNetSSD_deploy.prototxt", this);
+		String weights = getPath("mobilenet.caffemodel", this);
 		net = Dnn.readNetFromCaffe(proto, weights);
 		Log.i(TAG, "Network loaded successfully");
 		
@@ -104,17 +108,20 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 	
 	@Override
 	public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-		final int IN_WIDTH = 300;
-		final int IN_HEIGHT = 300;
-		final float WH_RATIO = (float)IN_WIDTH / IN_HEIGHT;
-		final double THRESHOLD = 0.2;
-		
 		// Get a new frame
 		Mat frame = inputFrame.rgba();
 		Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGBA2RGB);
-
+		
+		/**
+		 * Retreive the last computation's result and send new frame data to processing service
+		 * but only if it has finished its previous computation.
+		 * We don't want to process frames in a queue because by the time they are done
+		 * they will no longer be relevant.
+		 */
 		if (this.count < mRecognitionStateReceiver.getMessageCount()) {
+			
 			this.count = mRecognitionStateReceiver.getMessageCount();
+			
 			this.detection.release();
 			this.detection = mRecognitionStateReceiver.getDetection();
 
@@ -124,18 +131,10 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
 			recognitionHandler.enqueueWork(getApplicationContext(), frameIntent);
 		}
-
-//		try{
-//			Thread.sleep(10_000);
-//		} catch (InterruptedException ex) {
-//			System.out.println(ex);
-//		}
-		// Forward image through network.
-//		Mat blob = Dnn.blobFromImage(frame, IN_SCALE_FACTOR,
-//				new Size(IN_WIDTH, IN_HEIGHT),
-//				new Scalar(MEAN_VAL, MEAN_VAL, MEAN_VAL), false);
-//		net.setInput(blob);
-//		Mat detections = net.forward();
+		
+		/**
+		 * Crop frame to fit the neural network's specification
+		 */
 		int cols = frame.cols();
 		int rows = frame.rows();
 		Size cropSize;
@@ -152,7 +151,10 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 		subFrame = frame.submat(y1, y2, x1, x2);
 		cols = subFrame.cols();
 		rows = subFrame.rows();
-
+		
+		/**
+		 * Draw rectangles around detected objects (above a certain level of confidence)
+		 */
 		Mat detections = detection.getDetected();
 		for (int i = 0; i < detections.rows(); ++i) {
 			double confidence = detections.get(i, 2)[0];
@@ -163,41 +165,44 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 				int yLeftBottom = (int)(detections.get(i, 4)[0] * rows);
 				int xRightTop   = (int)(detections.get(i, 5)[0] * cols);
 				int yRightTop   = (int)(detections.get(i, 6)[0] * rows);
-				// Draw rectangle around detected object.
+				
 				Imgproc.rectangle(subFrame, new Point(xLeftBottom, yLeftBottom),
 						new Point(xRightTop, yRightTop),
 						new Scalar(0, 255, 0));
 				String label = classNames[classId] + ": " + confidence;
 				int[] baseLine = new int[1];
-				Size labelSize = Imgproc.getTextSize(label, Core.FONT_HERSHEY_SIMPLEX, 0.5, 1, baseLine);
-				// Draw background for label.
+				Size labelSize = Imgproc.getTextSize(label, Core.FONT_HERSHEY_SIMPLEX, FONT_SCALE, 1, baseLine);
+				
 				Imgproc.rectangle(subFrame, new Point(xLeftBottom, yLeftBottom - labelSize.height),
 						new Point(xLeftBottom + labelSize.width, yLeftBottom + baseLine[0]),
-						new Scalar(255, 255, 255), Core.FILLED);
-				// Write class name and confidence.
+						new Scalar(0, 0, 0), Core.FILLED);
+				
 				Imgproc.putText(subFrame, label, new Point(xLeftBottom, yLeftBottom),
-						Core.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar(0, 0, 0));
+						Core.FONT_HERSHEY_SIMPLEX, FONT_SCALE, new Scalar(255, 255, 255));
 			}
 		}
-//		detections.release();
 		return frame;
 	}
 	
+	/**
+	 * @param file  File path in the assets folder
+	 * @param context   Application context
+	 * @return  Returns the file's path on the device's filesystem
+	 */
 	private static String getPath(String file, Context context) {
 		AssetManager assetManager = context.getAssets();
-		BufferedInputStream inputStream = null;
+		BufferedInputStream inputStream;
 		try {
-			// Read data from assets.
 			inputStream = new BufferedInputStream(assetManager.open(file));
 			byte[] data = new byte[inputStream.available()];
 			inputStream.read(data);
 			inputStream.close();
-			// Create copy file in storage.
+			
 			File outFile = new File(context.getFilesDir(), file);
 			FileOutputStream os = new FileOutputStream(outFile);
 			os.write(data);
 			os.close();
-			// Return a path to file which may be read in common way.
+			
 			return outFile.getAbsolutePath();
 		} catch (IOException ex) {
 			Log.i(TAG, "Failed to upload a file");

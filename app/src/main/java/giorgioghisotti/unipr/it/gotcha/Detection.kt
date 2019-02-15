@@ -1,7 +1,6 @@
 package giorgioghisotti.unipr.it.gotcha
 
 import org.opencv.core.Mat
-import org.opencv.dnn.Net
 import java.io.Serializable
 
 class Detection : Serializable {
