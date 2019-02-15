@@ -69,6 +69,7 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
         mOpenCvCameraView!!.visibility = CameraBridgeViewBase.VISIBLE
         mOpenCvCameraView!!.setCvCameraViewListener(this)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)   //prevent screen from locking
+        window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
     }
 
     override fun onCameraViewStarted(width: Int, height: Int) {
