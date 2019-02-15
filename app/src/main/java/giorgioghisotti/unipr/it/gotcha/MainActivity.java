@@ -40,7 +40,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 			"sheep", "sofa", "train", "tvmonitor"};
 	private Net net;
 	private CameraBridgeViewBase mOpenCvCameraView;
-	private RecognitionStateReceiver mRecognitionStateReceiver = new RecognitionStateReceiver();
+	private RecognitionStateReceiver mRecognitionStateReceiver;
+	private String proto;
+	private String weights;
 	
 	// Initialize OpenCV manager.
 	private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
@@ -50,6 +52,10 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 				case LoaderCallbackInterface.SUCCESS: {
 					Log.i(TAG, "OpenCV loaded successfully");
 					mOpenCvCameraView.enableView();
+					mRecognitionStateReceiver = new RecognitionStateReceiver();
+					IntentFilter recognitionIntentFilter = new IntentFilter("com.example.android.threadsample.BROADCAST");
+					LocalBroadcastManager.getInstance(getApplicationContext())
+							.registerReceiver(mRecognitionStateReceiver, recognitionIntentFilter);
 					break;
 				}
 				default: {
@@ -75,14 +81,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 		mOpenCvCameraView.setVisibility(CameraBridgeViewBase.VISIBLE);
 		mOpenCvCameraView.setCvCameraViewListener(this);
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);   //prevent screen from locking
-		IntentFilter recognitionIntentFilter = new IntentFilter("com.example.android.threadsample.BROADCAST");
-		LocalBroadcastManager.getInstance(this).registerReceiver(mRecognitionStateReceiver, recognitionIntentFilter);
 	}
 	
 	@Override
 	public void onCameraViewStarted(int width, int height) {
-		String proto = getPath("MobileNetSSD_deploy.prototxt", this);
-		String weights = getPath("mobilenet.caffemodel", this);
+		this.proto = getPath("MobileNetSSD_deploy.prototxt", this);
+		this.weights = getPath("mobilenet.caffemodel", this);
 		net = Dnn.readNetFromCaffe(proto, weights);
 		Log.i(TAG, "Network loaded successfully");
 		
@@ -106,8 +110,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 		Mat frame = inputFrame.rgba();
 		Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGBA2RGB);
 		
+		SerializableNet serNet = new SerializableNet();
+		serNet.setNet(net);
 		Intent frameIntent = new Intent();
-		frameIntent.putExtra("frame", frame.toString());
+		frameIntent.putExtra("frame", frame.getNativeObjAddr());
+		frameIntent.putExtra("proto", proto);
+		frameIntent.putExtra("weights", weights);
 		
 		recognitionHandler.enqueueWork(getApplicationContext(), frameIntent);
 		// Forward image through network.
