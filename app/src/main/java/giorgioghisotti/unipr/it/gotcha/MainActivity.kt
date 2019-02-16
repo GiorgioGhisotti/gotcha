@@ -3,6 +3,7 @@ package giorgioghisotti.unipr.it.gotcha
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.support.v4.content.LocalBroadcastManager
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
@@ -34,6 +35,7 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
     private var count = 0
     private var detection: Detection? = null
     private var subFrame: Mat? = null
+    private var receivedPermissionAnswer: Boolean = false
 
     // Initialize OpenCV manager.
     private val mLoaderCallback = object : BaseLoaderCallback(this) {
