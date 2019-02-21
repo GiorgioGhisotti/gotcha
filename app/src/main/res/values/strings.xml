@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">Gotcha</string>
     <string name="title_activity_splash">Splash</string>
-    <string name="dummy_button">Dummy Button</string>
-    <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="live_camera_button_text">Live Camera</string>
 </resources>

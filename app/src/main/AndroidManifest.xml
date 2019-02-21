@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="giorgioghisotti.unipr.it.gotcha">
-
     <!-- Allow to use a camera -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -26,6 +25,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.NoActionBar">
+        <activity android:name=".MainMenu"></activity>
         <activity
             android:name=".Splash"
             android:configChanges="orientation|keyboardHidden|screenSize"
@@ -39,8 +39,7 @@
         </activity>
         <activity
             android:name=".NetCameraView"
-            android:screenOrientation="landscape">
-        </activity>
+            android:screenOrientation="landscape"></activity>
 
         <service
             android:name=".RecognitionHandler"

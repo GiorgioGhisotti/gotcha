@@ -39,7 +39,7 @@ class Splash : AppCompatActivity() {
                 if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                     finish()
                 } else {
-                    val myIntent = Intent(this, NetCameraView::class.java)
+                    val myIntent = Intent(this, MainMenu::class.java)
                     this.startActivity(myIntent)
                 }
             }
