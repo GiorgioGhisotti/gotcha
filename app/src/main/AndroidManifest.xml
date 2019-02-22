@@ -40,11 +40,6 @@
         <activity
             android:name=".NetCameraView"
             android:screenOrientation="landscape"></activity>
-
-        <service
-            android:name=".RecognitionHandler"
-            android:exported="false"
-            android:permission="android.permission.BIND_JOB_SERVICE" />
     </application>
 
 </manifest>

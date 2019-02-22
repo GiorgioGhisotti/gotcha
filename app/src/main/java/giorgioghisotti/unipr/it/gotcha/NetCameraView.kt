@@ -30,10 +30,11 @@ import java.io.IOException
 class NetCameraView : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListener2 {
     private var net: Net? = null
     private var mOpenCvCameraView: CameraBridgeViewBase? = null
-    private var mRecognitionStateReceiver: RecognitionStateReceiver? = null
-    private var count = 0
-    private var detection: Detection? = null
     private var subFrame: Mat? = null
+    private var paused: Boolean = false
+    private var mNetProcessing: NetProcessing? = null
+    private var detections: Mat? = null
+    private var frameCache: Mat? = null
 
     // Initialize OpenCV manager.
     private val mLoaderCallback = object : BaseLoaderCallback(this) {
@@ -42,18 +43,20 @@ class NetCameraView : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewList
                 LoaderCallbackInterface.SUCCESS -> {
                     Log.i(TAG, "OpenCV loaded successfully")
                     mOpenCvCameraView!!.enableView()
-                    mRecognitionStateReceiver = RecognitionStateReceiver()
-                    val recognitionIntentFilter = IntentFilter("com.example.android.threadsample.BROADCAST")
-                    LocalBroadcastManager.getInstance(applicationContext)
-                            .registerReceiver(mRecognitionStateReceiver!!, recognitionIntentFilter)
-                    detection = Detection()
                     subFrame = Mat(0, 0, 0)
+                    detections = Mat(0,0,0)
+                    frameCache = Mat(0,0,0)
                 }
                 else -> {
                     super.onManagerConnected(status)
                 }
             }
         }
+    }
+
+    public override fun onPause() {
+        super.onPause()
+        paused = true
     }
 
     public override fun onResume() {
@@ -63,6 +66,7 @@ class NetCameraView : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewList
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContentView(R.layout.activity_main)
         // Set up camera listener.
         mOpenCvCameraView = findViewById(R.id.CameraView)
@@ -76,8 +80,8 @@ class NetCameraView : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewList
         val proto = getPath("MobileNetSSD_deploy.prototxt", this)
         val weights = getPath("mobilenet.caffemodel", this)
         net = Dnn.readNetFromCaffe(proto, weights)
+        mNetProcessing = NetProcessing(net)
         Log.i(TAG, "Network loaded successfully")
-
     }
 
     override fun onCameraViewStopped() {
@@ -86,27 +90,27 @@ class NetCameraView : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewList
 
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
         // Get a new frame
-        val frame = inputFrame.rgba()
+        var frame = inputFrame.rgba()
+        if (frame.cols() == 0 || frame.empty()) frame = frameCache
+        else {
+            frameCache!!.release()
+            frameCache = frame.clone()
+        }
         Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGBA2RGB)
 
         /**
-         * Retreive the last computation's result and send new frame data to processing service
-         * but only if it has finished its previous computation.
+         * Retreive the last computation's result and process new data
+         * but only if the previous thread has completed its computation.
          * We don't want to process frames in a queue because by the time they are done
          * they will no longer be relevant.
          */
-        if (this.count < mRecognitionStateReceiver!!.getMessageCount()) {
-
-            this.count = mRecognitionStateReceiver!!.getMessageCount()
-
-            this.detection!!.release()
-            this.detection = mRecognitionStateReceiver!!.getDetection()
-
-            val frameIntent = Intent()
-            frameIntent.putExtra("net", net!!.nativeObjAddr)
-            frameIntent.putExtra("frame", frame.nativeObjAddr)
-
-            recognitionHandler.enqueueWork(applicationContext, frameIntent)
+        if (!mNetProcessing!!.busy) {
+            detections!!.release()
+            detections = mNetProcessing!!.detections.clone()
+            mNetProcessing!!.detections.release()
+            mNetProcessing = NetProcessing(net)
+            mNetProcessing!!.frame = frame.clone()
+            mNetProcessing!!.start()
         }
 
         /**
@@ -132,16 +136,16 @@ class NetCameraView : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewList
         /**
          * Draw rectangles around detected objects (above a certain level of confidence)
          */
-        val detections = detection!!.detected
-        for (i in 0 until detections.rows()) {
-            val confidence = detections.get(i, 2)[0]
+//        val detections = detection!!.detected
+        for (i in 0 until detections!!.rows()) {
+            val confidence = detections!!.get(i, 2)[0]
             if (confidence > THRESHOLD) {
                 println("Confidence: $confidence")
-                val classId = detections.get(i, 1)[0].toInt()
-                val xLeftBottom = (detections.get(i, 3)[0] * cols).toInt()
-                val yLeftBottom = (detections.get(i, 4)[0] * rows).toInt()
-                val xRightTop = (detections.get(i, 5)[0] * cols).toInt()
-                val yRightTop = (detections.get(i, 6)[0] * rows).toInt()
+                val classId = detections!!.get(i, 1)[0].toInt()
+                val xLeftBottom = (detections!!.get(i, 3)[0] * cols).toInt()
+                val yLeftBottom = (detections!!.get(i, 4)[0] * rows).toInt()
+                val xRightTop = (detections!!.get(i, 5)[0] * cols).toInt()
+                val yRightTop = (detections!!.get(i, 6)[0] * rows).toInt()
 
                 Imgproc.rectangle(subFrame!!, Point(xLeftBottom.toDouble(), yLeftBottom.toDouble()),
                         Point(xRightTop.toDouble(), yRightTop.toDouble()),
@@ -168,9 +172,10 @@ class NetCameraView : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewList
         private const val IN_WIDTH = 300
         private const val IN_HEIGHT = 300
         private const val WH_RATIO = IN_WIDTH.toFloat() / IN_HEIGHT
+        private const val IN_SCALE_FACTOR = 0.007843
+        private const val MEAN_VAL = 127.5
 
-        private val recognitionHandler = RecognitionHandler()
-        private const val TAG = "OpenCV/Sample/MobileNet"
+        private const val TAG = R.string.tag.toString()
         private val classNames = arrayOf("background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor")
 
         /**
@@ -198,6 +203,29 @@ class NetCameraView : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewList
             }
 
             return ""
+        }
+    }
+
+    private class NetProcessing(nnet: Net?) : Thread() {
+        var busy: Boolean = false
+        var frame: Mat = Mat(0,0,0)
+        var detections: Mat = Mat(0,0,0)
+        val net: Net? = nnet
+
+        override fun run() {
+            if (frame.empty()) return
+            busy = true
+            super.run()
+            if (net == null) return
+            val blob: Mat = Dnn.blobFromImage(frame, IN_SCALE_FACTOR,
+                    Size(IN_WIDTH.toDouble(), IN_HEIGHT.toDouble()),
+                    Scalar(MEAN_VAL, MEAN_VAL, MEAN_VAL), false)
+            net.setInput(blob)
+            detections = net.forward()
+            blob.release()
+            frame.release()
+            detections = detections.reshape(1, detections.total().toInt() / 7)
+            busy = false
         }
     }
 }
