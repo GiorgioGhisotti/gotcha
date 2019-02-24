@@ -27,6 +27,11 @@ class MainMenu : AppCompatActivity() {
             var mIntent = Intent(this, NetCameraView::class.java)
             this.startActivity(mIntent)
         }
+        val imageEditorButton: Button = findViewById(R.id.image_editor_button)
+        imageEditorButton.setOnClickListener {
+            var mIntent = Intent(this, ImageEditor::class.java)
+            this.startActivity(mIntent)
+        }
     }
 
     /**

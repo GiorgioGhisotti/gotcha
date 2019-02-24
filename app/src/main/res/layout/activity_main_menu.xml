@@ -18,10 +18,10 @@
             android:text="@string/live_camera_button_text" />
 
         <Button
-            android:id="@+id/button2"
+            android:id="@+id/image_editor_button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Button" />
+            android:text="@string/image_editor_button" />
     </LinearLayout>
 
 </android.support.constraint.ConstraintLayout>

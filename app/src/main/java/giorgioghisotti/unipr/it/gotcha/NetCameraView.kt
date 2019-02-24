@@ -1,9 +1,6 @@
 package giorgioghisotti.unipr.it.gotcha
 
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.support.v4.content.LocalBroadcastManager
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -28,10 +25,9 @@ import java.io.FileOutputStream
 import java.io.IOException
 
 class NetCameraView : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListener2 {
-    private var net: Net? = null
     private var mOpenCvCameraView: CameraBridgeViewBase? = null
     private var subFrame: Mat? = null
-    private var paused: Boolean = false
+    private var net: Net? = null
     private var mNetProcessing: NetProcessing? = null
     private var detections: Mat? = null
     private var frameCache: Mat? = null
@@ -54,11 +50,6 @@ class NetCameraView : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewList
         }
     }
 
-    public override fun onPause() {
-        super.onPause()
-        paused = true
-    }
-
     public override fun onResume() {
         super.onResume()
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_4_0, this, mLoaderCallback)
@@ -67,7 +58,7 @@ class NetCameraView : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewList
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_net_camera_view)
         // Set up camera listener.
         mOpenCvCameraView = findViewById(R.id.CameraView)
         mOpenCvCameraView!!.visibility = CameraBridgeViewBase.VISIBLE

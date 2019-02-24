@@ -3,4 +3,7 @@
     <string name="title_activity_splash">Splash</string>
     <string name="live_camera_button_text">Live Camera</string>
     <string name="tag">Gotcha</string>
+    <string name="select_image_button">Open image</string>
+    <string name="image_editor_button">Image Editor</string>
+    <string name="image_to_edit">Image to edit</string>
 </resources>
