@@ -6,4 +6,5 @@
     <string name="select_image_button">Open image</string>
     <string name="image_editor_button">Image Editor</string>
     <string name="image_to_edit">Image to edit</string>
+    <string name="find_object_button">Find Objects</string>
 </resources>

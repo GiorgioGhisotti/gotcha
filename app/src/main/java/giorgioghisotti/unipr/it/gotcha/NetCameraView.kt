@@ -174,7 +174,7 @@ class NetCameraView : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewList
          * @param context   Application context
          * @return  Returns the file's path on the device's filesystem
          */
-        private fun getPath(file: String, context: Context): String {
+        fun getPath(file: String, context: Context): String {
             val assetManager = context.assets
             val inputStream: BufferedInputStream
             try {
