@@ -4,9 +4,14 @@ import android.app.Activity
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Environment
 import android.provider.MediaStore
+import android.support.v4.content.FileProvider
+import android.view.WindowManager
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.Toast
@@ -20,11 +25,17 @@ import org.opencv.core.*
 import org.opencv.dnn.Dnn
 import org.opencv.dnn.Net
 import org.opencv.imgproc.Imgproc
+import java.io.File
+import java.io.IOException
+import java.text.DateFormat.getDateInstance
+import java.text.SimpleDateFormat
+import java.util.*
 
 class ImageEditor : AppCompatActivity() {
 
     private var mImageView: ImageView? = null
     private var mOpenImageButton: Button? = null
+    private var mTakePictureButton: Button? = null
     private var mFindObjectButton: Button? = null
     private var sourceImage: Bitmap? = null
     private var currentImage: Bitmap? = null
@@ -53,11 +64,17 @@ class ImageEditor : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_image_editor)
+        window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
 
         mImageView = findViewById(R.id.image_editor_view)
+
         mOpenImageButton = findViewById(R.id.select_image_button)
         mOpenImageButton!!.setOnClickListener {
             getImgFromGallery()
+        }
+        mTakePictureButton = findViewById(R.id.take_picture_button)
+        mTakePictureButton!!.setOnClickListener {
+            dispatchTakePictureIntent()
         }
         mFindObjectButton = findViewById(R.id.find_object_button)
         mFindObjectButton!!.setOnClickListener {
@@ -88,6 +105,59 @@ class ImageEditor : AppCompatActivity() {
         startActivityForResult(galleryIntent, RESULT_LOAD_IMG)
     }
 
+    private fun takePicture() {
+        Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
+            takePictureIntent.resolveActivity(packageManager)?.also {
+                startActivityForResult(takePictureIntent, RESULT_PICTURE)
+            }
+        }
+    }
+
+    var currentPhotoPath: String = ""
+
+    @Throws(IOException::class)
+    private fun createImageFile(): File {
+        // Create an image file name
+        val timeStamp: String? = "tmp"//getDateInstance().format(Date())
+        val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        return File.createTempFile(
+                "JPEG_${timeStamp}_", /* prefix */
+                ".jpg", /* suffix */
+                storageDir /* directory */
+        ).apply {
+            // Save a file: path for use with ACTION_VIEW intents
+            currentPhotoPath = absolutePath
+        }
+    }
+
+    val REQUEST_TAKE_PHOTO = 1
+
+    private fun dispatchTakePictureIntent() {
+        Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
+            // Ensure that there's a camera activity to handle the intent
+            takePictureIntent.resolveActivity(packageManager)?.also {
+                // Create the File where the photo should go
+                val photoFile: File? = try {
+                    createImageFile()
+                } catch (ex: IOException) {
+                    // Error occurred while creating the File
+                    Toast.makeText(this, "Error creating file!", Toast.LENGTH_LONG).show()
+                    return
+                }
+                // Continue only if the File was successfully created
+                photoFile?.also {
+                    val photoURI: Uri = FileProvider.getUriForFile(
+                            this,
+                            applicationContext.packageName + ".giorgioghisotti.unipr.it.gotcha.provider",
+                            it
+                    )
+                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
+                    startActivityForResult(takePictureIntent, RESULT_PICTURE)
+                }
+            }
+        }
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
@@ -101,6 +171,14 @@ class ImageEditor : AppCompatActivity() {
                 } else return
 
                 genPreview()
+            } else if(requestCode == RESULT_PICTURE && resultCode == Activity.RESULT_OK){
+                if (data != null && data.data!= null && mImageView != null) {
+                    val imageBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), data.data)
+                    sourceImage = imageBitmap
+                    currentImage = sourceImage
+
+                    genPreview()
+                }
             }
         } catch (e: Exception) {
             Toast.makeText(this, "Something went wrong: "+e.toString(), Toast.LENGTH_LONG).show()
@@ -127,8 +205,15 @@ class ImageEditor : AppCompatActivity() {
 
     }
 
+    private fun scaleFactor(size: Int) : Int {
+        return if(size/ NORMAL_SIZE < 1) {
+            1
+        } else {
+            size/ NORMAL_SIZE
+        }
+    }
+
     private fun NetProcessing(nnet: Net?, bbmp: Bitmap?) {
-        var detections: Mat = Mat(0,0,0)
         val net: Net? = nnet
         var bmp: Bitmap? = bbmp
 
@@ -149,7 +234,7 @@ class ImageEditor : AppCompatActivity() {
                         Size(IN_WIDTH.toDouble(), IN_HEIGHT.toDouble()),
                         Scalar(MEAN_VAL, MEAN_VAL, MEAN_VAL), false)
                 net.setInput(blob)
-                detections = net.forward()
+                var detections: Mat = net.forward()
                 blob.release()
                 detections = detections.reshape(1, detections.total().toInt() / 7)
 
@@ -168,17 +253,25 @@ class ImageEditor : AppCompatActivity() {
 
                         Imgproc.rectangle(frame, Point(xLeftBottom.toDouble(), yLeftBottom.toDouble()),
                                 Point(xRightTop.toDouble(), yRightTop.toDouble()),
-                                Scalar(0.0, 255.0, 0.0))
-                        val label = classNames[classId] + ": " + confidence
+                                Scalar(0.0, 255.0, 0.0), RECT_THICKNESS*scaleFactor(frame.cols()))
+
+                        val label = classNames[classId] + ": " + String.format("%.2f", confidence)
                         val baseLine = IntArray(1)
-                        val labelSize = Imgproc.getTextSize(label, Core.FONT_HERSHEY_SIMPLEX, FONT_SCALE.toDouble(), 1, baseLine)
+                        val labelSize = Imgproc.getTextSize(label, Core.FONT_HERSHEY_SIMPLEX,
+                                FONT_SCALE.toDouble()*scaleFactor(frame.cols()),
+                                1, baseLine)
 
                         Imgproc.rectangle(frame, Point(xLeftBottom.toDouble(), yLeftBottom - labelSize.height),
                                 Point(xLeftBottom + labelSize.width, (yLeftBottom + baseLine[0]).toDouble()),
                                 Scalar(0.0, 0.0, 0.0), Core.FILLED)
 
-                        Imgproc.putText(frame, label, Point(xLeftBottom.toDouble(), yLeftBottom.toDouble()),
-                                Core.FONT_HERSHEY_SIMPLEX, FONT_SCALE.toDouble(), Scalar(255.0, 255.0, 255.0))
+                        Imgproc.putText(frame, label,
+                                Point(xLeftBottom.toDouble(), yLeftBottom.toDouble()),
+                                Core.FONT_HERSHEY_SIMPLEX,
+                                FONT_SCALE.toDouble()*scaleFactor(frame.cols()),
+                                Scalar(255.0, 255.0, 255.0),
+                                FONT_THICKNESS*scaleFactor(frame.cols()))
+
                     }
                 }
                 bmp = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888)
@@ -198,16 +291,18 @@ class ImageEditor : AppCompatActivity() {
 
     companion object {
         private const val FONT_SCALE = 1.0.toFloat()
-        private const val THRESHOLD = 0.2
+        private const val THRESHOLD = 0.5
         private const val IN_WIDTH = 300
         private const val IN_HEIGHT = 300
-        private const val WH_RATIO = IN_WIDTH.toFloat() / IN_HEIGHT
         private const val IN_SCALE_FACTOR = 0.007843
         private const val MEAN_VAL = 127.5
+        private const val RECT_THICKNESS = 3
+        private const val FONT_THICKNESS = 2
+        private const val NORMAL_SIZE = 800
 
         private val classNames = arrayOf("background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor")
 
         private const val RESULT_LOAD_IMG = 1
-
+        private const val RESULT_PICTURE = 2
     }
 }
