@@ -31,6 +31,7 @@ class Splash : AppCompatActivity() {
         supportActionBar?.show()
     }
     private var mVisible: Boolean = false
+    private var paused: Boolean = false
     private val mHideRunnable = Runnable { hide() }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -43,7 +44,7 @@ class Splash : AppCompatActivity() {
                         || grantResults[2] != PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(this,
                             "Sorry, this app requires camera and storage access to work!",
-                            2)
+                            Toast.LENGTH_LONG).show()
                     finish()
                 } else {
                     val myIntent = Intent(this, MainMenu::class.java)
@@ -63,6 +64,19 @@ class Splash : AppCompatActivity() {
         ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.CAMERA,
                 android.Manifest.permission.READ_EXTERNAL_STORAGE,
                 android.Manifest.permission.WRITE_EXTERNAL_STORAGE), PERMISSION_REQUEST_CODE)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        paused = true
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        if (paused) {
+            finish()
+        }
     }
 
     override fun onPostCreate(savedInstanceState: Bundle?) {

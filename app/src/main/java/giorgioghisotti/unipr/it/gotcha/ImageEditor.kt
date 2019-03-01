@@ -48,6 +48,7 @@ class ImageEditor : AppCompatActivity() {
         override fun onManagerConnected(status: Int) {
             when (status) {
                 LoaderCallbackInterface.SUCCESS -> {
+                    this@ImageEditor.genPreview()
                     if (net == null) {
                         val proto = getPath("MobileNetSSD_deploy.prototxt", this@ImageEditor)
                         val weights = getPath("mobilenet.caffemodel", this@ImageEditor)
@@ -79,6 +80,7 @@ class ImageEditor : AppCompatActivity() {
         mFindObjectButton = findViewById(R.id.find_object_button)
         mFindObjectButton!!.setOnClickListener {
             if(!busy) {
+                mFindObjectButton!!.isEnabled = false
                 try {
                     NetProcessing(net, sourceImage)
                 } catch (e: OutOfMemoryError) {
@@ -97,20 +99,11 @@ class ImageEditor : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_4_0, this, mLoaderCallback)
-        genPreview()
     }
 
     private fun getImgFromGallery() {
         val galleryIntent = Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
         startActivityForResult(galleryIntent, RESULT_LOAD_IMG)
-    }
-
-    private fun takePicture() {
-        Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
-            takePictureIntent.resolveActivity(packageManager)?.also {
-                startActivityForResult(takePictureIntent, RESULT_PICTURE)
-            }
-        }
     }
 
     var currentPhotoPath: String = ""
@@ -129,8 +122,6 @@ class ImageEditor : AppCompatActivity() {
             currentPhotoPath = absolutePath
         }
     }
-
-    val REQUEST_TAKE_PHOTO = 1
 
     private fun dispatchTakePictureIntent() {
         Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
@@ -221,15 +212,22 @@ class ImageEditor : AppCompatActivity() {
 
         object: Thread() {
             override fun run() {
-                if (bmp == null) return
                 super.run()
+                if (bmp == null || net == null){
+                    this@ImageEditor.runOnUiThread(object: Runnable {
+                        override fun run() {
+                            this@ImageEditor.mFindObjectButton!!.isEnabled = true
+                        }
+                    })
+                    this@ImageEditor.busy = false
+                    return
+                }
                 this@ImageEditor.currentImage = null    //avoid filling the heap
                 val bmp32 = bmp!!.copy(Bitmap.Config.ARGB_8888, false)  //required format for bitmaptomat
                 val frame = Mat(0,0,0)
                 bitmapToMat(bmp32, frame)
                 Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGBA2RGB)
 
-                if (net == null) return
                 val blob: Mat = Dnn.blobFromImage(frame, IN_SCALE_FACTOR,
                         Size(IN_WIDTH.toDouble(), IN_HEIGHT.toDouble()),
                         Scalar(MEAN_VAL, MEAN_VAL, MEAN_VAL), false)
@@ -282,6 +280,7 @@ class ImageEditor : AppCompatActivity() {
                     override fun run() {
                         this@ImageEditor.currentImage = bmp
                         genPreview()
+                        this@ImageEditor.mFindObjectButton!!.isEnabled = true
                     }
                 })
                 this@ImageEditor.busy = false
