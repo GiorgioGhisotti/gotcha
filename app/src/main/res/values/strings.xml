@@ -8,4 +8,10 @@
     <string name="image_to_edit">Image to edit</string>
     <string name="find_object_button">Find Objects</string>
     <string name="take_picture_button">Take Picture</string>
+    <string name="MobileNetSSD_model_file">MobileNetSSD.caffemodel</string>
+    <string name="MobileNetSSD_config_file">MobileNetSSD.prototxt</string>
+    <string name="YOLOv3_model_file">yolov3.weights</string>
+    <string name="YOLOv3_config_file">yolov3.cfg</string>
+    <string name="YOLO_URL">https://s3.eu-west-3.amazonaws.com/gotcha-weights/weights/YOLO/</string>
+    <string name="MobileNetSSD_URL">https://s3.eu-west-3.amazonaws.com/gotcha-weights/weights/MobileNetSSD/</string>
 </resources>
