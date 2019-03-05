@@ -36,7 +36,6 @@ class Splash : AppCompatActivity() {
         supportActionBar?.show()
     }
     private var mVisible: Boolean = false
-    private var paused: Boolean = false
     private val mHideRunnable = Runnable { hide() }
     private val sDir = Environment.getExternalStorageDirectory().absolutePath
     private val mobileNetSSDModelPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD.caffemodel"
@@ -102,6 +101,10 @@ class Splash : AppCompatActivity() {
 
         setContentView(R.layout.activity_splash)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        val sharedPreferences: SharedPreferences = this.getSharedPreferences("sp", Context.MODE_PRIVATE)
+        if (sharedPreferences.getBoolean("reached_menu", false)) {
+            sharedPreferences.edit().putBoolean("reached_menu", false).commit()
+        }
 
         mVisible = true
 
@@ -112,16 +115,13 @@ class Splash : AppCompatActivity() {
                 android.Manifest.permission.WRITE_EXTERNAL_STORAGE), PERMISSION_REQUEST_CODE)
     }
 
-    override fun onPause() {
-        super.onPause()
-        paused = true
-    }
-
     override fun onResume() {
         super.onResume()
 
-        if (paused) {
-//            finish()
+        val sharedPreferences: SharedPreferences = this.getSharedPreferences("sp", Context.MODE_PRIVATE)
+        if (sharedPreferences.getBoolean("reached_menu", false)) {
+            sharedPreferences.edit().putBoolean("reached_menu", false).commit()
+            finish()
         }
     }
 

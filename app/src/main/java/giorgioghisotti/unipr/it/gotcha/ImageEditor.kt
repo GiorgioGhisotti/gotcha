@@ -5,12 +5,14 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.hardware.display.DisplayManager
 import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
 import android.support.v4.content.FileProvider
+import android.util.DisplayMetrics
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.ImageView
@@ -197,10 +199,11 @@ class ImageEditor : AppCompatActivity() {
     }
 
     private fun scaleFactor(size: Int) : Int {
-        return if(size/ NORMAL_SIZE < 1) {
+        windowManager.defaultDisplay.getMetrics(metrics)
+        return if(size/ (NORMAL_SIZE*metrics.density).toInt() < 1) {
             1
         } else {
-            size/ NORMAL_SIZE
+            size/ (NORMAL_SIZE*metrics.density).toInt()
         }
     }
 
@@ -288,6 +291,8 @@ class ImageEditor : AppCompatActivity() {
         }.start()
     }
 
+    private var metrics = DisplayMetrics()
+
     companion object {
         private const val FONT_SCALE = 1.0.toFloat()
         private const val THRESHOLD = 0.5
@@ -297,7 +302,7 @@ class ImageEditor : AppCompatActivity() {
         private const val MEAN_VAL = 127.5
         private const val RECT_THICKNESS = 3
         private const val FONT_THICKNESS = 2
-        private const val NORMAL_SIZE = 800
+        private const val NORMAL_SIZE = 500
 
         private val classNames = arrayOf("background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor")
 
