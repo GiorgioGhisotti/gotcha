@@ -4,8 +4,6 @@ import android.app.Activity
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.hardware.display.DisplayManager
 import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
@@ -17,7 +15,6 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.Toast
-import giorgioghisotti.unipr.it.gotcha.NetCameraView.Companion.getPath
 import org.opencv.android.BaseLoaderCallback
 import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
@@ -29,9 +26,6 @@ import org.opencv.dnn.Net
 import org.opencv.imgproc.Imgproc
 import java.io.File
 import java.io.IOException
-import java.text.DateFormat.getDateInstance
-import java.text.SimpleDateFormat
-import java.util.*
 
 class ImageEditor : AppCompatActivity() {
 
@@ -44,6 +38,9 @@ class ImageEditor : AppCompatActivity() {
     private var imagePreview: Bitmap? = null
     private var net: Net? = null
     private var busy: Boolean = false
+    private val sDir = Environment.getExternalStorageDirectory().absolutePath
+    private val mobileNetSSDModelPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD.caffemodel"
+    private val mobileNetSSDConfigPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD.prototxt"
 
     // Initialize OpenCV manager.
     private val mLoaderCallback = object : BaseLoaderCallback(this) {
@@ -52,8 +49,10 @@ class ImageEditor : AppCompatActivity() {
                 LoaderCallbackInterface.SUCCESS -> {
                     this@ImageEditor.genPreview()
                     if (net == null) {
-                        val proto = getPath("MobileNetSSD_deploy.prototxt", this@ImageEditor)
-                        val weights = getPath("mobilenet.caffemodel", this@ImageEditor)
+                        val mobileSSDConfig = File(sDir + mobileNetSSDConfigPath)
+                        val mobileSSDModel = File(sDir + mobileNetSSDModelPath)
+                        val proto = mobileSSDConfig.absolutePath
+                        val weights = mobileSSDModel.absolutePath
                         net = Dnn.readNetFromCaffe(proto, weights)
                     }
                 }

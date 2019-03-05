@@ -3,6 +3,7 @@ package giorgioghisotti.unipr.it.gotcha
 import android.content.Context
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Environment
 import android.util.Log
 import android.view.WindowManager
 
@@ -31,6 +32,9 @@ class NetCameraView : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewList
     private var mNetProcessing: NetProcessing? = null
     private var detections: Mat? = null
     private var frameCache: Mat? = null
+    private val sDir = Environment.getExternalStorageDirectory().absolutePath
+    private val mobileNetSSDModelPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD.caffemodel"
+    private val mobileNetSSDConfigPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD.prototxt"
 
     // Initialize OpenCV manager.
     private val mLoaderCallback = object : BaseLoaderCallback(this) {
@@ -68,8 +72,10 @@ class NetCameraView : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewList
     }
 
     override fun onCameraViewStarted(width: Int, height: Int) {
-        val proto = getPath("MobileNetSSD_deploy.prototxt", this)
-        val weights = getPath("mobilenet.caffemodel", this)
+        val mobileSSDConfig = File(sDir + mobileNetSSDConfigPath)
+        val mobileSSDModel = File(sDir + mobileNetSSDModelPath)
+        val proto = mobileSSDConfig.absolutePath
+        val weights = mobileSSDModel.absolutePath
         net = Dnn.readNetFromCaffe(proto, weights)
         mNetProcessing = NetProcessing(net)
         Log.i(TAG, "Network loaded successfully")
@@ -169,32 +175,6 @@ class NetCameraView : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewList
         private const val TAG = R.string.tag.toString()
         private val classNames = arrayOf("background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor")
 
-        /**
-         * @param file  File path in the assets folder
-         * @param context   Application context
-         * @return  Returns the file's path on the device's filesystem
-         */
-        fun getPath(file: String, context: Context): String {
-            val assetManager = context.assets
-            val inputStream: BufferedInputStream
-            try {
-                inputStream = BufferedInputStream(assetManager.open(file))
-                val data = ByteArray(inputStream.available())
-                inputStream.read(data)
-                inputStream.close()
-
-                val outFile = File(context.filesDir, file)
-                val os = FileOutputStream(outFile)
-                os.write(data)
-                os.close()
-
-                return outFile.absolutePath
-            } catch (ex: IOException) {
-                Log.i(TAG, "Failed to upload a file")
-            }
-
-            return ""
-        }
     }
 
     private class NetProcessing(nnet: Net?) : Thread() {
