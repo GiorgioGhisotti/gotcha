@@ -1,14 +1,19 @@
 package giorgioghisotti.unipr.it.gotcha
 
-import android.content.Intent
+import android.app.DownloadManager
+import android.content.*
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
 import android.support.v4.app.ActivityCompat
+import android.support.v4.content.LocalBroadcastManager
 import android.view.View
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_splash.*
+import java.io.File
 
 class Splash : AppCompatActivity() {
     private val mHideHandler = Handler()
@@ -33,6 +38,37 @@ class Splash : AppCompatActivity() {
     private var mVisible: Boolean = false
     private var paused: Boolean = false
     private val mHideRunnable = Runnable { hide() }
+    private val sDir = Environment.getExternalStorageDirectory().absolutePath
+    private val mobileNetSSDModelPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD.caffemodel"
+    private val mobileNetSSDConfigPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD.prototxt"
+
+    private fun download() {
+        val mobileNetSSDModelRequest: DownloadManager.Request = DownloadManager.Request(
+                Uri.parse("https://s3.eu-west-3.amazonaws.com/gotcha-weights/weights/MobileNetSSD/MobileNetSSD.caffemodel")
+        )
+        mobileNetSSDModelRequest.setDescription("Downloading MobileNetSSD weights")
+        mobileNetSSDModelRequest.setTitle("MobileNetSSD weights")
+        val mobileNetSSDConfigRequest: DownloadManager.Request = DownloadManager.Request(
+                Uri.parse("https://s3.eu-west-3.amazonaws.com/gotcha-weights/weights/MobileNetSSD/MobileNetSSD.prototxt")
+        )
+        mobileNetSSDConfigRequest.setDescription("Downloading MobileNetSSD configuration")
+        mobileNetSSDConfigRequest.setTitle("MobileNetSSD configuration")
+
+        mobileNetSSDModelRequest.setDestinationInExternalPublicDir(
+                "Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/", "MobileNetSSD.caffemodel")
+        mobileNetSSDConfigRequest.setDestinationInExternalPublicDir(
+                "Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/", "MobileNetSSD.prototxt")
+
+        val manager: DownloadManager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+
+        val sharedPreferences: SharedPreferences = this.getSharedPreferences("sp", Context.MODE_PRIVATE)
+        sharedPreferences.edit().putString("last_item", "MobileNetSSD.caffemodel").apply()
+
+        val MobileNetSSDConfigRequestID = manager.enqueue(mobileNetSSDConfigRequest)
+        sharedPreferences.edit().putLong("MobileNetSSD.prototxt", MobileNetSSDConfigRequestID).commit()
+        val MobileNetSSDModelRequestID = manager.enqueue(mobileNetSSDModelRequest)
+        sharedPreferences.edit().putLong("MobileNetSSD.caffemodel", MobileNetSSDModelRequestID).commit()
+    }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -41,14 +77,21 @@ class Splash : AppCompatActivity() {
                 if (grantResults.isEmpty()
                         || grantResults[0] != PackageManager.PERMISSION_GRANTED
                         || grantResults[1] != PackageManager.PERMISSION_GRANTED
-                        || grantResults[2] != PackageManager.PERMISSION_GRANTED) {
+                        || grantResults[2] != PackageManager.PERMISSION_GRANTED
+                        || grantResults[3] != PackageManager.PERMISSION_GRANTED
+                        || grantResults[4] != PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(this,
                             "Sorry, this app requires camera and storage access to work!",
                             Toast.LENGTH_LONG).show()
                     finish()
                 } else {
-                    val myIntent = Intent(this, MainMenu::class.java)
-                    this.startActivity(myIntent)
+                    val mobileSSDConfig = File(sDir + mobileNetSSDConfigPath)
+                    val mobileSSDModel = File(sDir + mobileNetSSDModelPath)
+                    if (!mobileSSDConfig.exists() || !mobileSSDModel.exists()) download()
+                    else {
+                        val myIntent = Intent(this, MainMenu::class.java)
+                        this.startActivity(myIntent)
+                    }
                 }
             }
         }
@@ -61,8 +104,11 @@ class Splash : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         mVisible = true
+
         ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.CAMERA,
                 android.Manifest.permission.READ_EXTERNAL_STORAGE,
+                android.Manifest.permission.INTERNET,
+                android.Manifest.permission.ACCESS_NETWORK_STATE,
                 android.Manifest.permission.WRITE_EXTERNAL_STORAGE), PERMISSION_REQUEST_CODE)
     }
 
@@ -75,7 +121,7 @@ class Splash : AppCompatActivity() {
         super.onResume()
 
         if (paused) {
-            finish()
+//            finish()
         }
     }
 

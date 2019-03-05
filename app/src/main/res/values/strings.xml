@@ -14,4 +14,5 @@
     <string name="YOLOv3_config_file">yolov3.cfg</string>
     <string name="YOLO_URL">https://s3.eu-west-3.amazonaws.com/gotcha-weights/weights/YOLO/</string>
     <string name="MobileNetSSD_URL">https://s3.eu-west-3.amazonaws.com/gotcha-weights/weights/MobileNetSSD/</string>
+    <string name="nn_weights">Android/data/giorgioghisotti.unipr.it.gotcha/files/weights</string>
 </resources>
