@@ -9,15 +9,16 @@ class DownloadBroadcastReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context?, intent: Intent?) {
         val action: String? = intent?.action
-        val sharedPreferences = context?.getSharedPreferences("sp", Context.MODE_PRIVATE)
-        val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
-        val lastItem = sharedPreferences?.getString("last_item", "")
+        val sharedPreferences = context?.getSharedPreferences("sp", Context.MODE_PRIVATE) ?: return
+        val count = sharedPreferences.getInt("download_count", 0) - 1
 
         if (DownloadManager.ACTION_DOWNLOAD_COMPLETE == action) {
-            if(sharedPreferences?.getLong(lastItem, -1) == id){
+            if(count == 0){
                 val myIntent = Intent(context, MainMenu::class.java)
                 myIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context?.startActivity(myIntent)
+                context.startActivity(myIntent)
+            } else {
+                sharedPreferences.edit().putInt("download_count", count).apply()
             }
         }
     }

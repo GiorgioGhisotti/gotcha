@@ -14,6 +14,7 @@ import android.view.View
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_splash.*
 import java.io.File
+import java.util.*
 
 class Splash : AppCompatActivity() {
     private val mHideHandler = Handler()
@@ -38,55 +39,39 @@ class Splash : AppCompatActivity() {
     private var mVisible: Boolean = false
     private val mHideRunnable = Runnable { hide() }
     private val sDir = Environment.getExternalStorageDirectory().absolutePath + "/"
-    private var mobileNetSSDModelPath: String? = null
-    private var mobileNetSSDConfigPath: String? = null
-    private var yoloV3ModelPath: String? = null
-    private var yoloV3ConfigPath: String? = null
 
-    private fun download() {
-        val mobileNetSSDModelRequest: DownloadManager.Request = DownloadManager.Request(
-                Uri.parse("https://s3.eu-west-3.amazonaws.com/gotcha-weights/weights/MobileNetSSD/MobileNetSSD.caffemodel")
-        )
-        mobileNetSSDModelRequest.setDescription("Downloading MobileNetSSD weights")
-        mobileNetSSDModelRequest.setTitle("MobileNetSSD weights")
-        val mobileNetSSDConfigRequest: DownloadManager.Request = DownloadManager.Request(
-                Uri.parse("https://s3.eu-west-3.amazonaws.com/gotcha-weights/weights/MobileNetSSD/MobileNetSSD.prototxt")
-        )
-        mobileNetSSDConfigRequest.setDescription("Downloading MobileNetSSD configuration")
-        mobileNetSSDConfigRequest.setTitle("MobileNetSSD configuration")
-        val yoloV3ConfigRequest: DownloadManager.Request = DownloadManager.Request(
-                Uri.parse("https://s3.eu-west-3.amazonaws.com/gotcha-weights/weights/YOLO/yolov3.cfg")
-        )
-        yoloV3ConfigRequest.setDescription("Downloading YOLOv3 configuration")
-        yoloV3ConfigRequest.setTitle("YOLOv3 configuration")
-        val yoloV3ModelRequest: DownloadManager.Request = DownloadManager.Request(
-                Uri.parse("https://s3.eu-west-3.amazonaws.com/gotcha-weights/weights/YOLO/yolov3.weights")
-        )
-        yoloV3ModelRequest.setDescription("Downloading YOLOv3 model")
-        yoloV3ModelRequest.setTitle("YOLOv3 model")
-
-        mobileNetSSDModelRequest.setDestinationInExternalPublicDir(
-                "Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD/", "MobileNetSSD.caffemodel")
-        mobileNetSSDConfigRequest.setDestinationInExternalPublicDir(
-                "Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD/", "MobileNetSSD.prototxt")
-        yoloV3ModelRequest.setDestinationInExternalPublicDir(
-                "Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/YOLO/", "YOLOv3.weights")
-        yoloV3ConfigRequest.setDestinationInExternalPublicDir(
-                "Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/YOLO/", "YOLOv3.cfg")
-
+    private fun downloadWeights() {
+        val weights: Array<String> = resources.getStringArray(R.array.weights)
+        val sharedPreferences: SharedPreferences = this.getSharedPreferences("sp", Context.MODE_PRIVATE)
+        sharedPreferences.edit().putInt("download_count", weights.size).apply()
         val manager: DownloadManager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
 
-        val sharedPreferences: SharedPreferences = this.getSharedPreferences("sp", Context.MODE_PRIVATE)
-        sharedPreferences.edit().putString("last_item", "YOLOv3.weights").apply()
+        for(file_name in weights){
+            val path = resources.getString(R.string.weights_path)
+            val request: DownloadManager.Request = DownloadManager.Request(
+                    Uri.parse(resources.getString(R.string.weights_url) + file_name)
+            )
+            request.setDescription("Downloading " + file_name)
+            request.setTitle("Downloading " + file_name)
+            request.setDestinationInExternalPublicDir(path, file_name)
+            manager.enqueue(request)
+        }
+    }
 
-        val MobileNetSSDConfigRequestID = manager.enqueue(mobileNetSSDConfigRequest)
-        sharedPreferences.edit().putLong("MobileNetSSD.prototxt", MobileNetSSDConfigRequestID).commit()
-        val MobileNetSSDModelRequestID = manager.enqueue(mobileNetSSDModelRequest)
-        sharedPreferences.edit().putLong("MobileNetSSD.caffemodel", MobileNetSSDModelRequestID).commit()
-        val yoloV3ModelRequestID = manager.enqueue(yoloV3ModelRequest)
-        sharedPreferences.edit().putLong("YOLOv3.weights", yoloV3ModelRequestID).commit()
-        val yoloV3ConfigRequestID = manager.enqueue(yoloV3ConfigRequest)
-        sharedPreferences.edit().putLong("YOLOv3.cfg", yoloV3ConfigRequestID).commit()
+    private fun checkDownloadedWeights() : Boolean {
+        val weights: Array<String> = resources.getStringArray(R.array.weights)
+        val files: Vector<File> = Vector()
+        for (file_name in weights) {
+            val path = sDir + "/" + resources.getString(R.string.weights_path)
+            val weight_file = File(path + file_name)
+            files.addElement(weight_file)
+            if (!weight_file.exists()){
+                for (file in files) file.delete()
+                downloadWeights()
+                return false
+            }
+        }
+        return true
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -103,17 +88,9 @@ class Splash : AppCompatActivity() {
                             "Sorry, this app requires camera and storage access to work!",
                             Toast.LENGTH_LONG).show()
                     finish()
-                } else {
-                    val mobileSSDConfig = File(sDir + mobileNetSSDConfigPath)
-                    val mobileSSDModel = File(sDir + mobileNetSSDModelPath)
-                    val yoloV3Config = File(sDir + yoloV3ConfigPath)
-                    val yoloV3Model = File(sDir + yoloV3ModelPath)
-                    if (!mobileSSDConfig.exists() || !mobileSSDModel.exists() ||
-                            !yoloV3Config.exists() || !yoloV3Model.exists()) download()
-                    else {
-                        val myIntent = Intent(this, MainMenu::class.java)
-                        this.startActivity(myIntent)
-                    }
+                } else if (checkDownloadedWeights()){
+                    val myIntent = Intent(this, MainMenu::class.java)
+                    this.startActivity(myIntent)
                 }
             }
         }
@@ -122,14 +99,6 @@ class Splash : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        mobileNetSSDModelPath = resources.getString(R.string.MobileNetSSD_Model) +
-                resources.getString(R.string.MobileNetSSD_model_file)
-        mobileNetSSDConfigPath = resources.getString(R.string.MobileNetSSD_Config) +
-                resources.getString(R.string.MobileNetSSD_config_file)
-        yoloV3ModelPath = resources.getString(R.string.YOLOv3_Model) +
-                resources.getString(R.string.YOLOv3_model_file)
-        yoloV3ConfigPath = resources.getString(R.string.YOLOv3_Config) +
-                resources.getString(R.string.YOLOv3_config_file)
         setContentView(R.layout.activity_splash)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         val sharedPreferences: SharedPreferences = this.getSharedPreferences("sp", Context.MODE_PRIVATE)
