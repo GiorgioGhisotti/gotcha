@@ -37,11 +37,11 @@ class Splash : AppCompatActivity() {
     }
     private var mVisible: Boolean = false
     private val mHideRunnable = Runnable { hide() }
-    private val sDir = Environment.getExternalStorageDirectory().absolutePath
-    private val mobileNetSSDModelPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD/MobileNetSSD.caffemodel"
-    private val mobileNetSSDConfigPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD/MobileNetSSD.prototxt"
-    private val yoloV3ModelPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/YOLO/YOLOv3.weights"
-    private val yoloV3ConfigPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/YOLO/YOLOv3.cfg"
+    private val sDir = Environment.getExternalStorageDirectory().absolutePath + "/"
+    private var mobileNetSSDModelPath: String? = null
+    private var mobileNetSSDConfigPath: String? = null
+    private var yoloV3ModelPath: String? = null
+    private var yoloV3ConfigPath: String? = null
 
     private fun download() {
         val mobileNetSSDModelRequest: DownloadManager.Request = DownloadManager.Request(
@@ -122,6 +122,14 @@ class Splash : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        mobileNetSSDModelPath = resources.getString(R.string.MobileNetSSD_Model) +
+                resources.getString(R.string.MobileNetSSD_model_file)
+        mobileNetSSDConfigPath = resources.getString(R.string.MobileNetSSD_Config) +
+                resources.getString(R.string.MobileNetSSD_config_file)
+        yoloV3ModelPath = resources.getString(R.string.YOLOv3_Model) +
+                resources.getString(R.string.YOLOv3_model_file)
+        yoloV3ConfigPath = resources.getString(R.string.YOLOv3_Config) +
+                resources.getString(R.string.YOLOv3_config_file)
         setContentView(R.layout.activity_splash)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         val sharedPreferences: SharedPreferences = this.getSharedPreferences("sp", Context.MODE_PRIVATE)
