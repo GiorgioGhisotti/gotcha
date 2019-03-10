@@ -33,8 +33,10 @@ class NetCameraView : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewList
     private var detections: Mat? = null
     private var frameCache: Mat? = null
     private val sDir = Environment.getExternalStorageDirectory().absolutePath
-    private val mobileNetSSDModelPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD.caffemodel"
-    private val mobileNetSSDConfigPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD.prototxt"
+    private val mobileNetSSDModelPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD/MobileNetSSD.caffemodel"
+    private val mobileNetSSDConfigPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD/MobileNetSSD.prototxt"
+    private val yoloV3ModelPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/YOLO/YOLOv3.weights"
+    private val yoloV3ConfigPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/YOLO/YOLOv3.cfg"
 
     // Initialize OpenCV manager.
     private val mLoaderCallback = object : BaseLoaderCallback(this) {

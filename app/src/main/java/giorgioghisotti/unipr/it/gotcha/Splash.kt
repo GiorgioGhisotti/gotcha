@@ -1,5 +1,6 @@
 package giorgioghisotti.unipr.it.gotcha
 
+import android.Manifest
 import android.app.DownloadManager
 import android.content.*
 import android.content.pm.PackageManager
@@ -9,7 +10,6 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
 import android.support.v4.app.ActivityCompat
-import android.support.v4.content.LocalBroadcastManager
 import android.view.View
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_splash.*
@@ -38,8 +38,10 @@ class Splash : AppCompatActivity() {
     private var mVisible: Boolean = false
     private val mHideRunnable = Runnable { hide() }
     private val sDir = Environment.getExternalStorageDirectory().absolutePath
-    private val mobileNetSSDModelPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD.caffemodel"
-    private val mobileNetSSDConfigPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD.prototxt"
+    private val mobileNetSSDModelPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD/MobileNetSSD.caffemodel"
+    private val mobileNetSSDConfigPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD/MobileNetSSD.prototxt"
+    private val yoloV3ModelPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/YOLO/YOLOv3.weights"
+    private val yoloV3ConfigPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/YOLO/YOLOv3.cfg"
 
     private fun download() {
         val mobileNetSSDModelRequest: DownloadManager.Request = DownloadManager.Request(
@@ -52,21 +54,39 @@ class Splash : AppCompatActivity() {
         )
         mobileNetSSDConfigRequest.setDescription("Downloading MobileNetSSD configuration")
         mobileNetSSDConfigRequest.setTitle("MobileNetSSD configuration")
+        val yoloV3ConfigRequest: DownloadManager.Request = DownloadManager.Request(
+                Uri.parse("https://s3.eu-west-3.amazonaws.com/gotcha-weights/weights/YOLO/yolov3.cfg")
+        )
+        yoloV3ConfigRequest.setDescription("Downloading YOLOv3 configuration")
+        yoloV3ConfigRequest.setTitle("YOLOv3 configuration")
+        val yoloV3ModelRequest: DownloadManager.Request = DownloadManager.Request(
+                Uri.parse("https://s3.eu-west-3.amazonaws.com/gotcha-weights/weights/YOLO/yolov3.weights")
+        )
+        yoloV3ModelRequest.setDescription("Downloading YOLOv3 model")
+        yoloV3ModelRequest.setTitle("YOLOv3 model")
 
         mobileNetSSDModelRequest.setDestinationInExternalPublicDir(
-                "Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/", "MobileNetSSD.caffemodel")
+                "Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD/", "MobileNetSSD.caffemodel")
         mobileNetSSDConfigRequest.setDestinationInExternalPublicDir(
-                "Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/", "MobileNetSSD.prototxt")
+                "Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD/", "MobileNetSSD.prototxt")
+        yoloV3ModelRequest.setDestinationInExternalPublicDir(
+                "Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/YOLO/", "YOLOv3.weights")
+        yoloV3ConfigRequest.setDestinationInExternalPublicDir(
+                "Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/YOLO/", "YOLOv3.cfg")
 
         val manager: DownloadManager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
 
         val sharedPreferences: SharedPreferences = this.getSharedPreferences("sp", Context.MODE_PRIVATE)
-        sharedPreferences.edit().putString("last_item", "MobileNetSSD.caffemodel").apply()
+        sharedPreferences.edit().putString("last_item", "YOLOv3.weights").apply()
 
         val MobileNetSSDConfigRequestID = manager.enqueue(mobileNetSSDConfigRequest)
         sharedPreferences.edit().putLong("MobileNetSSD.prototxt", MobileNetSSDConfigRequestID).commit()
         val MobileNetSSDModelRequestID = manager.enqueue(mobileNetSSDModelRequest)
         sharedPreferences.edit().putLong("MobileNetSSD.caffemodel", MobileNetSSDModelRequestID).commit()
+        val yoloV3ModelRequestID = manager.enqueue(yoloV3ModelRequest)
+        sharedPreferences.edit().putLong("YOLOv3.weights", yoloV3ModelRequestID).commit()
+        val yoloV3ConfigRequestID = manager.enqueue(yoloV3ConfigRequest)
+        sharedPreferences.edit().putLong("YOLOv3.cfg", yoloV3ConfigRequestID).commit()
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -86,7 +106,10 @@ class Splash : AppCompatActivity() {
                 } else {
                     val mobileSSDConfig = File(sDir + mobileNetSSDConfigPath)
                     val mobileSSDModel = File(sDir + mobileNetSSDModelPath)
-                    if (!mobileSSDConfig.exists() || !mobileSSDModel.exists()) download()
+                    val yoloV3Config = File(sDir + yoloV3ConfigPath)
+                    val yoloV3Model = File(sDir + yoloV3ModelPath)
+                    if (!mobileSSDConfig.exists() || !mobileSSDModel.exists() ||
+                            !yoloV3Config.exists() || !yoloV3Model.exists()) download()
                     else {
                         val myIntent = Intent(this, MainMenu::class.java)
                         this.startActivity(myIntent)
@@ -108,11 +131,11 @@ class Splash : AppCompatActivity() {
 
         mVisible = true
 
-        ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.CAMERA,
-                android.Manifest.permission.READ_EXTERNAL_STORAGE,
-                android.Manifest.permission.INTERNET,
-                android.Manifest.permission.ACCESS_NETWORK_STATE,
-                android.Manifest.permission.WRITE_EXTERNAL_STORAGE), PERMISSION_REQUEST_CODE)
+        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA,
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.INTERNET,
+                Manifest.permission.ACCESS_NETWORK_STATE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE), PERMISSION_REQUEST_CODE)
     }
 
     override fun onResume() {

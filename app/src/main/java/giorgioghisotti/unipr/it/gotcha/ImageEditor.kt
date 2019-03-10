@@ -39,8 +39,10 @@ class ImageEditor : AppCompatActivity() {
     private var net: Net? = null
     private var busy: Boolean = false
     private val sDir = Environment.getExternalStorageDirectory().absolutePath
-    private val mobileNetSSDModelPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD.caffemodel"
-    private val mobileNetSSDConfigPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD.prototxt"
+    private val mobileNetSSDModelPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD/MobileNetSSD.caffemodel"
+    private val mobileNetSSDConfigPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD/MobileNetSSD.prototxt"
+    private val yoloV3ModelPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/YOLO/YOLOv3.weights"
+    private val yoloV3ConfigPath: String = "/Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/YOLO/YOLOv3.cfg"
 
     // Initialize OpenCV manager.
     private val mLoaderCallback = object : BaseLoaderCallback(this) {
@@ -235,8 +237,18 @@ class ImageEditor : AppCompatActivity() {
                         Scalar(MEAN_VAL, MEAN_VAL, MEAN_VAL), false)
                 net.setInput(blob)
                 var detections: Mat = net.forward()
+                var detections1: Mat = net.forward("detection_out")
+                var detections2: Mat = net.forward("conv17_2_mbox_priorbox")
                 blob.release()
-                detections = detections.reshape(1, detections.total().toInt() / 7)
+                val tot = detections.total().toInt()
+                val tot1 = detections1.total().toInt()
+                val tot2 = detections2.total().toInt()
+                detections2 = detections2.reshape(1, tot2)
+                for (i in 0..tot2-1) {
+                    val n: DoubleArray? = detections2.get(i, 0)
+                    println("Detections2, index " + i + ": " + n!![0])
+                }
+                detections = detections.reshape(1, tot / 7)
 
                 /**
                  * Draw rectangles around detected objects (above a certain level of confidence)
