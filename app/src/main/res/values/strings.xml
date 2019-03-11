@@ -8,20 +8,22 @@
     <string name="image_to_edit">Image to edit</string>
     <string name="find_object_button">Find Objects</string>
     <string name="take_picture_button">Take Picture</string>
-    <string name="MobileNetSSD_model_file">MobileNetSSD.caffemodel</string>
-    <string name="MobileNetSSD_config_file">MobileNetSSD.prototxt</string>
-    <string name="YOLOv3_model_file">yolov3.weights</string>
-    <string name="YOLOv3_config_file">yolov3.cfg</string>
-    <string name="YOLO_URL">https://s3.eu-west-3.amazonaws.com/gotcha-weights/weights/YOLO/</string>
-    <string name="MobileNetSSD_URL">https://s3.eu-west-3.amazonaws.com/gotcha-weights/weights/MobileNetSSD/</string>
-    <string name="MobileNetSSD_Path">Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/MobileNetSSD/</string>
-    <string name="YOLOv3_Path">Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/YOLO/</string>
+
+    <string name="YOLO">yolov3</string>
+    <string name="MobileNetSSD">mobilenetssd</string>
+
+    <string name="MobileNetSSD_model_file">MobileNetSSD/MobileNetSSD.caffemodel</string>
+    <string name="MobileNetSSD_config_file">MobileNetSSD/MobileNetSSD.prototxt</string>
+    <string name="YOLOv3_model_file">YOLO/yolov3.weights</string>
+    <string name="YOLOv3_config_file">YOLO/yolov3.cfg</string>
+
     <string name="weights_url">https://s3.eu-west-3.amazonaws.com/gotcha-weights/weights/</string>
     <string name="weights_path">Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/</string>
+    <string name="dnn_toggle">dnn (left-mnssd)</string>
     <string-array name="weights">
-        <item name="MobileNetSSD_model_file">MobileNetSSD/MobileNetSSD.caffemodel</item>
-        <item name="MobileNetSSD_config_file">MobileNetSSD/MobileNetSSD.prototxt</item>
-        <item name="YOLOv3_model_file">YOLO/yolov3.weights</item>
-        <item name="YOLOv3_config_file">YOLO/yolov3.cfg</item>
+        <item>@string/MobileNetSSD_model_file</item>
+        <item>@string/MobileNetSSD_config_file</item>
+        <item>@string/YOLOv3_model_file</item>
+        <item>@string/YOLOv3_config_file</item>
     </string-array>
 </resources>
