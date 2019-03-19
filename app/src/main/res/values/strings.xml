@@ -20,6 +20,9 @@
     <string name="weights_url">https://s3.eu-west-3.amazonaws.com/gotcha-weights/weights/</string>
     <string name="weights_path">Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/</string>
     <string name="dnn_toggle">dnn (left-mnssd)</string>
+    <string name="dnn_switch">Use YOLOv3 (slower but finds more objects)</string>
+    <string name="save_pictures_switch">Save pictures</string>
+    <string name="settings_button">Settings</string>
     <string-array name="weights">
         <item>@string/MobileNetSSD_model_file</item>
         <item>@string/MobileNetSSD_config_file</item>

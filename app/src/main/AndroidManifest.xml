@@ -29,9 +29,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.NoActionBar">
-        <activity android:name=".ImageEditor"
-            android:configChanges="keyboard|orientation|screenSize">
-        </activity>
+        <activity android:name=".Settings"></activity>
+        <activity
+            android:name=".ImageEditor"
+            android:configChanges="keyboard|orientation|screenSize"></activity>
         <activity android:name=".MainMenu" />
         <activity
             android:name=".Splash"
@@ -47,6 +48,7 @@
         <activity
             android:name=".NetCameraView"
             android:screenOrientation="landscape" />
+
         <provider
             android:name="android.support.v4.content.FileProvider"
             android:authorities="${applicationId}.giorgioghisotti.unipr.it.gotcha.provider"
@@ -54,11 +56,12 @@
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths"></meta-data>
+                android:resource="@xml/file_paths" />
         </provider>
+
         <receiver
             android:name=".DownloadBroadcastReceiver"
-            android:exported="true" >
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
             </intent-filter>

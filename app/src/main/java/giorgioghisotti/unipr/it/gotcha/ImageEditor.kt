@@ -268,8 +268,8 @@ class ImageEditor : AppCompatActivity() {
                 bmp32 = null    //avoid filling the heap
                 Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGBA2RGB)
 
-                val sharedPreferences = this@ImageEditor.getSharedPreferences("dnn", Context.MODE_PRIVATE) ?: return
-                val dnn_type = sharedPreferences.getString("dnn_type", resources.getString(R.string.MobileNetSSD))
+                val sharedPreferencesDnn = this@ImageEditor.getSharedPreferences("dnn", Context.MODE_PRIVATE) ?: return
+                val dnn_type = sharedPreferencesDnn.getString("dnn_type", resources.getString(R.string.MobileNetSSD))
                 when (dnn_type) {
                     resources.getString(R.string.MobileNetSSD) -> {
                         val blob: Mat = Dnn.blobFromImage(frame, IN_SCALE_FACTOR_MNSSD,
