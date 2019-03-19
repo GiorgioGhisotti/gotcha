@@ -3,7 +3,6 @@ package giorgioghisotti.unipr.it.gotcha
 import android.content.Context
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.view.WindowManager
 import android.widget.CompoundButton
 import android.widget.Switch
