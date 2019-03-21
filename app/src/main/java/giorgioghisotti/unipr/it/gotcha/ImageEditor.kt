@@ -253,8 +253,7 @@ class ImageEditor : AppCompatActivity() {
                     this@ImageEditor.busy = false
                     return
                 }
-                this@ImageEditor.currentImage = null    //avoid filling the heap  //yes, I'm fighting the garbage collector
-                var bmp32: Bitmap? = null
+                val bmp32: Bitmap?
                 try {
                     bmp32 = bmp?.copy(Bitmap.Config.ARGB_8888, false)  //required format for bitmaptomat
                 } catch (e: OutOfMemoryError) {
@@ -262,10 +261,10 @@ class ImageEditor : AppCompatActivity() {
                     this@ImageEditor.mFindObjectButton!!.isEnabled = true
                     return
                 }
-                bmp = null    //avoid filling the heap
+                bmp?.recycle()    //avoid filling the heap
                 val frame = Mat(0,0,0)
                 bitmapToMat(bmp32, frame)
-                bmp32 = null    //avoid filling the heap
+                bmp32?.recycle() //avoid filling the heap
                 Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGBA2RGB)
 
                 val sharedPreferencesDnn = this@ImageEditor.getSharedPreferences("dnn", Context.MODE_PRIVATE) ?: return
