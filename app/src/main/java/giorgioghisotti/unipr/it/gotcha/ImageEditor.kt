@@ -28,6 +28,7 @@ import org.opencv.imgproc.Imgproc
 import org.opencv.utils.Converters
 import java.io.File
 import java.io.IOException
+import giorgioghisotti.unipr.it.gotcha.Saliency
 
 class ImageEditor : AppCompatActivity() {
 
