@@ -29,6 +29,9 @@ import org.opencv.utils.Converters
 import java.io.File
 import java.io.IOException
 import giorgioghisotti.unipr.it.gotcha.Saliency
+import org.opencv.core.CvType.CV_64FC1
+import org.opencv.imgproc.Imgproc.GC_INIT_WITH_RECT
+import org.opencv.imgproc.Imgproc.grabCut
 
 class ImageEditor : AppCompatActivity() {
 
@@ -268,6 +271,8 @@ class ImageEditor : AppCompatActivity() {
                 bmp32?.recycle() //avoid filling the heap
                 Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGBA2RGB)
 
+                val rects : MutableList<Rect> = ArrayList()
+
                 val sharedPreferencesDnn = this@ImageEditor.getSharedPreferences("dnn", Context.MODE_PRIVATE) ?: return
                 val dnn_type = sharedPreferencesDnn.getString("dnn_type", resources.getString(R.string.MobileNetSSD))
                 when (dnn_type) {
@@ -298,6 +303,8 @@ class ImageEditor : AppCompatActivity() {
                                 Imgproc.rectangle(frame, Point(xLeftBottom.toDouble(), yLeftBottom.toDouble()),
                                         Point(xRightTop.toDouble(), yRightTop.toDouble()),
                                         Scalar(0.0, 255.0, 0.0), RECT_THICKNESS*scaleFactor(frame.cols()))
+
+                                rects.add(Rect(xRightTop, yLeftBottom, (xRightTop-xLeftBottom), (yLeftBottom-yRightTop)))
 
                                 val label = classNames[classId] + ": " + String.format("%.2f", confidence)
                                 val baseLine = IntArray(1)
@@ -332,7 +339,6 @@ class ImageEditor : AppCompatActivity() {
 
                         val classIds : MutableList<Int> = ArrayList()
                         val confs : MutableList<Float> = ArrayList()
-                        val rects : MutableList<Rect> = ArrayList()
 
                         for (i in 0..result.size - 1){
                             val level = result.get(i)
@@ -386,7 +392,12 @@ class ImageEditor : AppCompatActivity() {
                     this@ImageEditor.mFindObjectButton!!.isEnabled = true
                     return
                 }
+                val grabbedCut: Mat = frame.clone()
+                val fgd: Mat = Mat.zeros(Size(65.0, 1.0), CV_64FC1)
+                val bgd: Mat = Mat.zeros(Size(65.0, 1.0), CV_64FC1)
                 matToBitmap(frame, bmp)
+                if(!rects.isEmpty()){
+                }
                 frame.release()
                 this@ImageEditor.runOnUiThread(object: Runnable {
                     override fun run() {
