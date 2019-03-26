@@ -30,8 +30,10 @@ import java.io.File
 import java.io.IOException
 import giorgioghisotti.unipr.it.gotcha.Saliency
 import org.opencv.core.CvType.CV_64FC1
+import org.opencv.core.CvType.CV_8UC1
 import org.opencv.imgproc.Imgproc.GC_INIT_WITH_RECT
 import org.opencv.imgproc.Imgproc.grabCut
+import kotlin.math.abs
 
 class ImageEditor : AppCompatActivity() {
 
@@ -265,7 +267,7 @@ class ImageEditor : AppCompatActivity() {
                     this@ImageEditor.mFindObjectButton!!.isEnabled = true
                     return
                 }
-                bmp?.recycle()    //avoid filling the heap
+                bmp = null    //avoid filling the heap
                 val frame = Mat(0,0,0)
                 bitmapToMat(bmp32, frame)
                 bmp32?.recycle() //avoid filling the heap
@@ -304,7 +306,12 @@ class ImageEditor : AppCompatActivity() {
                                         Point(xRightTop.toDouble(), yRightTop.toDouble()),
                                         Scalar(0.0, 255.0, 0.0), RECT_THICKNESS*scaleFactor(frame.cols()))
 
-                                rects.add(Rect(xRightTop, yLeftBottom, (xRightTop-xLeftBottom), (yLeftBottom-yRightTop)))
+                                rects.add(Rect(
+                                        xLeftBottom,
+                                        yRightTop - abs(yLeftBottom-yRightTop),
+                                        abs(xRightTop-xLeftBottom),
+                                        abs(yLeftBottom-yRightTop)
+                                ))
 
                                 val label = classNames[classId] + ": " + String.format("%.2f", confidence)
                                 val baseLine = IntArray(1)
@@ -392,11 +399,14 @@ class ImageEditor : AppCompatActivity() {
                     this@ImageEditor.mFindObjectButton!!.isEnabled = true
                     return
                 }
-                val grabbedCut: Mat = frame.clone()
-                val fgd: Mat = Mat.zeros(Size(65.0, 1.0), CV_64FC1)
-                val bgd: Mat = Mat.zeros(Size(65.0, 1.0), CV_64FC1)
                 matToBitmap(frame, bmp)
                 if(!rects.isEmpty()){
+                    val out: Mat = Mat(frame.size(), frame.type())
+                    Saliency.cutObj(frame, out, rects[0])
+                    bmp = null
+                    bmp = Bitmap.createBitmap(out.cols(), out.rows(), Bitmap.Config.ARGB_8888)
+                    matToBitmap(out, bmp)
+                    out.release()
                 }
                 frame.release()
                 this@ImageEditor.runOnUiThread(object: Runnable {

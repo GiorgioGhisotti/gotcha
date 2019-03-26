@@ -1,5 +1,7 @@
 package giorgioghisotti.unipr.it.gotcha
 
+import android.graphics.Bitmap
+import org.opencv.android.Utils.matToBitmap
 import org.opencv.core.Mat
 import org.opencv.core.Rect
 
@@ -18,15 +20,15 @@ class Saliency {
                 height: Int
         )
 
-        const val BLUR_KERNEL_SIZE = 5.0
-        const val SPXL_SIZE = 15
-        const val TVAL = 0.25
-
+        //Wrapper for native function
         fun cutObj(
                 inputImg: Mat,
                 outputImg: Mat,
                 objRect: Rect
         ) {
+            val inputSub = inputImg.submat(objRect)
+            val bmp: Bitmap = Bitmap.createBitmap(inputSub.cols(), inputSub.rows(), Bitmap.Config.ARGB_8888)
+            matToBitmap(inputSub, bmp)
             cutObj(
                     inputImgAddr = inputImg.nativeObjAddr,
                     outputImgAddr = outputImg.nativeObjAddr,

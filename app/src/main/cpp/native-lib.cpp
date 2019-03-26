@@ -34,7 +34,7 @@ void Java_giorgioghisotti_unipr_it_gotcha_Saliency_00024Companion_cutObj(
     Mat inputImg = *(Mat*) inputImgAddr;
     Mat outputImg = *(Mat*) outputImgAddr;
     Rect objRect = Rect(x, y, width, height);
-    Mat BlurImage; //Image holds alterations
+    Mat blurImage; //Image holds alterations
     Mat gCutImg; //super pixel image
     Mat spxlImg; //Saliency image
     Mat spxlLabel;
@@ -43,6 +43,7 @@ void Java_giorgioghisotti_unipr_it_gotcha_Saliency_00024Companion_cutObj(
     Mat fgd;
     Mat bgd;
     Mat binMask;
+    Mat spxlMod = *(Mat*) outputImgAddr;
 
     /* parameters of the algorithm */
     int SPXLSIZE = 15; //average super pixel size
@@ -56,62 +57,63 @@ void Java_giorgioghisotti_unipr_it_gotcha_Saliency_00024Companion_cutObj(
     Mat spxlSal = Mat::zeros(imgH, imgW, CV_8UC1);
 
     /* Blur the image with 3x3 Gaussian */
-    GaussianBlur(inputImg, BlurImage, Size(5, 5), 0, 0);
+    GaussianBlur(inputImg, blurImage, Size(5, 5), 0, 0);
 
-    /* Construct superpixel and generate mask*/
-    getSuperPixels(inputImg, spxlImg, spxlLabel, SPXLSIZE);
-
-    /* Compute the saliency map for the image using OpenCV */
-    getSaliencyMap(inputImg, salImg);
-
-    /* perfomr binarization on saliency map */
-    binarizeSaliencyMap(salImg, spxlLabel, spxlSal, Tvalue);
-
-    /* Perform dilation on image */
-    dilateBinary(spxlSal, dilatedImg, SPXLSIZE);
-
-    /* Find contours of the image */
-    vector<vector<Point> > contours;
-    vector<Vec4i> hierarchy;
-    findContours(spxlSal, contours, hierarchy,
-                 RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0, 0));
-
-    /* Find contours with largest area */
-    double area = 0;
-    vector<Point> *tracker;
-    vector<vector<Point>>::iterator cntItr = contours.begin();
-    for(;cntItr != contours.end();cntItr++){
-        double tmpArea = contourArea(*cntItr);
-        if(tmpArea > area)
-        {
-            tracker = &(*cntItr);
-            area = tmpArea;
-        }
-    }
-
-    /* Find the bounding box of the largest contour */
-    Rect bnds = boundingRect(*tracker);
-
-    /* pad rectangle */
-    int padSize=10;
-    if(bnds.x-padSize >= 0)
-    {
-        bnds.x = bnds.x - 10;
-        if(bnds.width + 2*padSize < imgW)
-        {
-            bnds.width = bnds.width + 2*padSize;
-        }
-    }
-    if(bnds.y-padSize >= 0)
-    {
-        bnds.y = bnds.y - 10;
-        if(bnds.height + 2*padSize < imgH)
-        {
-            bnds.height = bnds.height + 2*padSize;
-        }
-    }
+//    /* Construct superpixel and generate mask*/
+//    getSuperPixels(inputImg, spxlImg, spxlLabel, SPXLSIZE);
+//
+//    /* Compute the saliency map for the image using OpenCV */
+//    getSaliencyMap(inputImg, salImg);
+//
+//    /* perfomr binarization on saliency map */
+//    binarizeSaliencyMap(salImg, spxlLabel, spxlSal, Tvalue);
+//
+//    /* Perform dilation on image */
+//    dilateBinary(spxlSal, dilatedImg, SPXLSIZE);
+//
+//    /* Find contours of the image */
+//    vector<vector<Point> > contours;
+//    vector<Vec4i> hierarchy;
+//    findContours(spxlSal, contours, hierarchy,
+//                 RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0, 0));
+//
+//    /* Find contours with largest area */
+//    double area = 0;
+//    vector<Point> *tracker;
+//    vector<vector<Point>>::iterator cntItr = contours.begin();
+//    tracker = &(*cntItr);
+//    for(;cntItr != contours.end();cntItr++){
+//        double tmpArea = contourArea(*cntItr);
+//        if(tmpArea > area)
+//        {
+//            tracker = &(*cntItr);
+//            area = tmpArea;
+//        }
+//    }
+//
+//    /* Find the bounding box of the largest contour */
+//    Rect bnds = boundingRect(*tracker);
+//
+//    /* pad rectangle */
+//    int padSize=10;
+//    if(bnds.x-padSize >= 0)
+//    {
+//        bnds.x = bnds.x - 10;
+//        if(bnds.width + 2*padSize < imgW)
+//        {
+//            bnds.width = bnds.width + 2*padSize;
+//        }
+//    }
+//    if(bnds.y-padSize >= 0)
+//    {
+//        bnds.y = bnds.y - 10;
+//        if(bnds.height + 2*padSize < imgH)
+//        {
+//            bnds.height = bnds.height + 2*padSize;
+//        }
+//    }
     /* Use the above rectangle to grab cut the object */
-    grabCut(BlurImage, gCutImg, bnds, bgd, fgd, 3, GC_INIT_WITH_RECT);
+    grabCut(blurImage, gCutImg, objRect, bgd, fgd, 3, GC_INIT_WITH_RECT);
     binMask.create(gCutImg.size(), CV_8UC1);
     binMask = gCutImg & 1;
 
@@ -119,7 +121,7 @@ void Java_giorgioghisotti_unipr_it_gotcha_Saliency_00024Companion_cutObj(
     cleanUpBinary(binMask);
 
     /* place super pixel mask on image*/
-    Mat spxlMod = inputImg.clone();
+    //Mat spxlMod = inputImg.clone();
     binMask = binMask*255;
     cvtColor(binMask, binMask, COLOR_GRAY2BGR );
     int i, j;
@@ -150,8 +152,6 @@ void Java_giorgioghisotti_unipr_it_gotcha_Saliency_00024Companion_cutObj(
             }
         }
     }
-
-    outputImg = spxlImg.clone();
 }
 
 void getSuperPixels(
