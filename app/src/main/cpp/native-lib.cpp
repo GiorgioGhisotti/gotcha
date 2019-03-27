@@ -45,110 +45,30 @@ void Java_giorgioghisotti_unipr_it_gotcha_Saliency_00024Companion_cutObj(
     Mat binMask;
     Mat spxlMod = *(Mat*) outputImgAddr;
 
-    /* parameters of the algorithm */
-    int SPXLSIZE = 15; //average super pixel size
-    double Tvalue = 0.25; //threshold valie
-
     /* get information on the image, height and width */
     int imgH = inputImg.rows;
     int imgW = inputImg.cols;
 
-    /* initialize the binarized image as all black */
-    Mat spxlSal = Mat::zeros(imgH, imgW, CV_8UC1);
-
     /* Blur the image with 3x3 Gaussian */
     GaussianBlur(inputImg, blurImage, Size(5, 5), 0, 0);
 
-//    /* Construct superpixel and generate mask*/
-//    getSuperPixels(inputImg, spxlImg, spxlLabel, SPXLSIZE);
-//
-//    /* Compute the saliency map for the image using OpenCV */
-//    getSaliencyMap(inputImg, salImg);
-//
-//    /* perfomr binarization on saliency map */
-//    binarizeSaliencyMap(salImg, spxlLabel, spxlSal, Tvalue);
-//
-//    /* Perform dilation on image */
-//    dilateBinary(spxlSal, dilatedImg, SPXLSIZE);
-//
-//    /* Find contours of the image */
-//    vector<vector<Point> > contours;
-//    vector<Vec4i> hierarchy;
-//    findContours(spxlSal, contours, hierarchy,
-//                 RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0, 0));
-//
-//    /* Find contours with largest area */
-//    double area = 0;
-//    vector<Point> *tracker;
-//    vector<vector<Point>>::iterator cntItr = contours.begin();
-//    tracker = &(*cntItr);
-//    for(;cntItr != contours.end();cntItr++){
-//        double tmpArea = contourArea(*cntItr);
-//        if(tmpArea > area)
-//        {
-//            tracker = &(*cntItr);
-//            area = tmpArea;
-//        }
-//    }
-//
-//    /* Find the bounding box of the largest contour */
-//    Rect bnds = boundingRect(*tracker);
-//
-//    /* pad rectangle */
-//    int padSize=10;
-//    if(bnds.x-padSize >= 0)
-//    {
-//        bnds.x = bnds.x - 10;
-//        if(bnds.width + 2*padSize < imgW)
-//        {
-//            bnds.width = bnds.width + 2*padSize;
-//        }
-//    }
-//    if(bnds.y-padSize >= 0)
-//    {
-//        bnds.y = bnds.y - 10;
-//        if(bnds.height + 2*padSize < imgH)
-//        {
-//            bnds.height = bnds.height + 2*padSize;
-//        }
-//    }
     /* Use the above rectangle to grab cut the object */
     grabCut(blurImage, gCutImg, objRect, bgd, fgd, 3, GC_INIT_WITH_RECT);
     binMask.create(gCutImg.size(), CV_8UC1);
     binMask = gCutImg & 1;
 
-    /* Get contours and keep only the largest one */
-    cleanUpBinary(binMask);
-
     /* place super pixel mask on image*/
-    //Mat spxlMod = inputImg.clone();
-    binMask = binMask*255;
-    cvtColor(binMask, binMask, COLOR_GRAY2BGR );
     int i, j;
-    Vec3b* p;
-    Vec3b* q;
+    Vec4b* q;
     for( i = 0; i < imgH; ++i)
     {
-        p = binMask.ptr<Vec3b>(i);
-        for ( j = 0; j < imgW; ++j)
-        {
-            if(p[j][0] == 255 || p[j][1] == 255 || p[j][2] == 255){
-                p[j][0] = 0;
-                p[j][1] = 0;
-                p[j][2] = 255;
-            }
-        }
-    }
-
-    for( i = 0; i < imgH; ++i)
-    {
-        p = binMask.ptr<Vec3b>(i);
-        q = spxlMod.ptr<Vec3b>(i);
+        q = spxlMod.ptr<Vec4b>(i);
         for ( j = 0; j < imgW; ++j){
-            if(p[j][0] == 255 || p[j][1] == 255 ||	p[j][2] == 255){
+            if(binMask.at<unsigned char>(i, j) == 0){
                 q[j][0] = 0;
                 q[j][1] = 0;
-                q[j][2] = 255;
+                q[j][2] = 0;
+                q[j][2] = 0;
             }
         }
     }

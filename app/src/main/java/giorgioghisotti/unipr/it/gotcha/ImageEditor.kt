@@ -1,5 +1,6 @@
 package giorgioghisotti.unipr.it.gotcha
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -12,6 +13,8 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.support.v4.content.FileProvider
 import android.util.DisplayMetrics
+import android.view.MotionEvent
+import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.ImageView
@@ -28,12 +31,12 @@ import org.opencv.imgproc.Imgproc
 import org.opencv.utils.Converters
 import java.io.File
 import java.io.IOException
-import giorgioghisotti.unipr.it.gotcha.Saliency
-import org.opencv.core.CvType.CV_64FC1
-import org.opencv.core.CvType.CV_8UC1
-import org.opencv.imgproc.Imgproc.GC_INIT_WITH_RECT
-import org.opencv.imgproc.Imgproc.grabCut
+import giorgioghisotti.unipr.it.gotcha.Saliency.Companion.cutObj
+import giorgioghisotti.unipr.it.gotcha.Saliency.Companion.ndkCut
+import giorgioghisotti.unipr.it.gotcha.Saliency.Companion.sdkCut
+import org.opencv.core.CvType.CV_8UC4
 import kotlin.math.abs
+import kotlin.math.min
 
 class ImageEditor : AppCompatActivity() {
 
@@ -47,6 +50,7 @@ class ImageEditor : AppCompatActivity() {
     private var net: Net? = null
     private var busy: Boolean = false
     private val sDir = Environment.getExternalStorageDirectory().absolutePath
+    private var rects: MutableList<Rect>? = null
 
     // Initialize OpenCV manager.
     private val mLoaderCallback = object : BaseLoaderCallback(this) {
@@ -81,12 +85,39 @@ class ImageEditor : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_image_editor)
         window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
 
         mImageView = findViewById(R.id.image_editor_view)
+        mImageView!!.setOnTouchListener(
+                object: View.OnTouchListener {
+                    override fun onTouch(v: View, event: MotionEvent): Boolean {
+                        if (this@ImageEditor.rects == null || this@ImageEditor.rects!!.isEmpty()) return true
+                        this@ImageEditor.mImageView!!.isEnabled = false
+
+                        val viewX = this@ImageEditor.mImageView!!.x
+                        val viewY = this@ImageEditor.mImageView!!.y
+                        val x = event.x
+                        val y = event.y
+
+                        var currentRect = this@ImageEditor.rects!![0]
+
+                        for(rect in this@ImageEditor.rects!!) {
+                            if(x >= rect.x && x <= rect.x + rect.width &&
+                                    y >= rect.y && y <= rect.y + rect.height) {
+                                currentRect = rect
+                            }
+                        }
+
+                        cutObj(currentRect)
+
+                        return true
+                    }
+                }
+        )
 
         mOpenImageButton = findViewById(R.id.select_image_button)
         mOpenImageButton!!.setOnClickListener {
@@ -114,6 +145,38 @@ class ImageEditor : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_4_0, this, mLoaderCallback)
+    }
+
+    private fun cutObj(rect: Rect) {
+        object: Thread() {
+            override fun run() {
+                val bmp32: Bitmap?
+                try {
+                    bmp32 = sourceImage?.copy(Bitmap.Config.ARGB_8888, false)  //required format for bitmaptomat
+                } catch (e: OutOfMemoryError) {
+                    Toast.makeText(this@ImageEditor, "The image is too large!", Toast.LENGTH_LONG).show()
+                    this@ImageEditor.mFindObjectButton!!.isEnabled = true
+                    return
+                }
+                val frame = Mat(0,0,0)
+                bitmapToMat(bmp32, frame)
+                bitmapToMat(sourceImage, frame)
+                bmp32!!.recycle()
+                val out = frame.clone()
+                Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGBA2RGB)
+                ndkCut(frame, out, rect)
+                //sdkCut(frame, out, rect)
+                frame.release()
+                val bmp: Bitmap = Bitmap.createBitmap(out.cols(), out.rows(), Bitmap.Config.ARGB_8888)
+                matToBitmap(out, bmp)
+                out.release()
+                this@ImageEditor.runOnUiThread {
+                    this@ImageEditor.currentImage = bmp
+                    genPreview()
+                    this@ImageEditor.mImageView!!.isEnabled = true
+                }
+            }
+        }.start()
     }
 
     private fun getImgFromGallery() {
@@ -273,7 +336,7 @@ class ImageEditor : AppCompatActivity() {
                 bmp32?.recycle() //avoid filling the heap
                 Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGBA2RGB)
 
-                val rects : MutableList<Rect> = ArrayList()
+                this@ImageEditor.rects = ArrayList()
 
                 val sharedPreferencesDnn = this@ImageEditor.getSharedPreferences("dnn", Context.MODE_PRIVATE) ?: return
                 val dnn_type = sharedPreferencesDnn.getString("dnn_type", resources.getString(R.string.MobileNetSSD))
@@ -306,12 +369,11 @@ class ImageEditor : AppCompatActivity() {
                                         Point(xRightTop.toDouble(), yRightTop.toDouble()),
                                         Scalar(0.0, 255.0, 0.0), RECT_THICKNESS*scaleFactor(frame.cols()))
 
-                                rects.add(Rect(
-                                        xLeftBottom,
-                                        yRightTop - abs(yLeftBottom-yRightTop),
-                                        abs(xRightTop-xLeftBottom),
-                                        abs(yLeftBottom-yRightTop)
-                                ))
+                                val w = min(abs(xRightTop-xLeftBottom), frame.width())
+                                val h = min(abs(yLeftBottom-yRightTop), frame.height())
+                                val x = if(xLeftBottom + w > frame.width()) frame.width() - w else xLeftBottom
+                                val y = if(yRightTop > frame.height()) frame.height() - h else yRightTop - h
+                                this@ImageEditor.rects?.add(Rect(x, y, w, h))
 
                                 val label = classNames[classId] + ": " + String.format("%.2f", confidence)
                                 val baseLine = IntArray(1)
@@ -366,14 +428,14 @@ class ImageEditor : AppCompatActivity() {
 
                                     classIds.add(classIdPoint.x.toInt())
                                     confs.add(confidence)
-                                    rects.add(Rect(left, top, width, height))
+                                    this@ImageEditor.rects?.add(Rect(left, top, width, height))
                                 }
                             }
                         }
                         // Apply non-maximum suppression procedure.
                         val nmsThresh = 0.4f
                         val confidences = MatOfFloat(Converters.vector_float_to_Mat(confs))
-                        val boxesArray : Array<Rect> = rects.toTypedArray()
+                        val boxesArray : Array<Rect> = this@ImageEditor.rects?.toTypedArray()!!
                         val boxes = MatOfRect(*boxesArray)
                         val indices = MatOfInt()
                         Dnn.NMSBoxes(boxes, confidences, THRESHOLD_YOLO, nmsThresh, indices)
@@ -400,22 +462,20 @@ class ImageEditor : AppCompatActivity() {
                     return
                 }
                 matToBitmap(frame, bmp)
-                if(!rects.isEmpty()){
-                    val out: Mat = Mat(frame.size(), frame.type())
-                    Saliency.cutObj(frame, out, rects[0])
-                    bmp = null
-                    bmp = Bitmap.createBitmap(out.cols(), out.rows(), Bitmap.Config.ARGB_8888)
-                    matToBitmap(out, bmp)
-                    out.release()
-                }
+//                if(!(this@ImageEditor.rects!!.isEmpty())){
+//                    val out: Mat = frame.clone()//Mat(frame.size(), frame.type())
+//                    cutObj(frame, out, this@ImageEditor.rects!![0])
+//                    bmp = null
+//                    bmp = Bitmap.createBitmap(out.cols(), out.rows(), Bitmap.Config.ARGB_8888)
+//                    matToBitmap(out, bmp)
+//                    out.release()
+//                }
                 frame.release()
-                this@ImageEditor.runOnUiThread(object: Runnable {
-                    override fun run() {
-                        this@ImageEditor.currentImage = bmp
-                        genPreview()
-                        this@ImageEditor.mFindObjectButton!!.isEnabled = true
-                    }
-                })
+                this@ImageEditor.runOnUiThread {
+                    this@ImageEditor.currentImage = bmp
+                    genPreview()
+                    this@ImageEditor.mFindObjectButton!!.isEnabled = true
+                }
                 this@ImageEditor.busy = false
             }
         }.start()
