@@ -23,6 +23,7 @@
     <string name="dnn_switch">Use YOLOv3 (slower but finds more objects)</string>
     <string name="save_pictures_switch">Save pictures</string>
     <string name="settings_button">Settings</string>
+    <string name="ndk_switch">use sdk (slower)</string>
     <string-array name="weights">
         <item>@string/MobileNetSSD_model_file</item>
         <item>@string/MobileNetSSD_config_file</item>

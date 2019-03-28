@@ -164,8 +164,16 @@ class ImageEditor : AppCompatActivity() {
                 bmp32!!.recycle()
                 val out = frame.clone()
                 Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGBA2RGB)
-                ndkCut(frame, out, rect)
-                //sdkCut(frame, out, rect)
+                val sharedPreferencesSdk = this@ImageEditor.getSharedPreferences("ndk", Context.MODE_PRIVATE)
+                val usendk = sharedPreferencesSdk.getBoolean("use_ndk", true)
+                when (usendk) {
+                    true -> {
+                        ndkCut(frame, out, rect)
+                    }
+                    false -> {
+                        sdkCut(frame, out, rect)
+                    }
+                }
                 frame.release()
                 val bmp: Bitmap = Bitmap.createBitmap(out.cols(), out.rows(), Bitmap.Config.ARGB_8888)
                 matToBitmap(out, bmp)
