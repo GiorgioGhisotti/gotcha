@@ -24,6 +24,8 @@
     <string name="save_pictures_switch">Save pictures</string>
     <string name="settings_button">Settings</string>
     <string name="ndk_switch">use sdk (slower)</string>
+    <string name="cut_button">Cut</string>
+    <string name="cutter_image_view_description">image to cut</string>
     <string-array name="weights">
         <item>@string/MobileNetSSD_model_file</item>
         <item>@string/MobileNetSSD_config_file</item>

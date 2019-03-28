@@ -29,10 +29,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.NoActionBar">
-        <activity android:name=".Settings"></activity>
+        <activity android:name=".Cutter"></activity>
+        <activity android:name=".Settings" />
         <activity
             android:name=".ImageEditor"
-            android:configChanges="keyboard|orientation|screenSize"></activity>
+            android:configChanges="keyboard|orientation|screenSize" />
         <activity android:name=".MainMenu" />
         <activity
             android:name=".Splash"

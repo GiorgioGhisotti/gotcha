@@ -31,10 +31,10 @@ import org.opencv.imgproc.Imgproc
 import org.opencv.utils.Converters
 import java.io.File
 import java.io.IOException
-import giorgioghisotti.unipr.it.gotcha.Saliency.Companion.cutObj
 import giorgioghisotti.unipr.it.gotcha.Saliency.Companion.ndkCut
 import giorgioghisotti.unipr.it.gotcha.Saliency.Companion.sdkCut
-import org.opencv.core.CvType.CV_8UC4
+import java.io.ByteArrayOutputStream
+import java.io.FileOutputStream
 import kotlin.math.abs
 import kotlin.math.min
 
@@ -92,32 +92,6 @@ class ImageEditor : AppCompatActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
 
         mImageView = findViewById(R.id.image_editor_view)
-        mImageView!!.setOnTouchListener(
-                object: View.OnTouchListener {
-                    override fun onTouch(v: View, event: MotionEvent): Boolean {
-                        if (this@ImageEditor.rects == null || this@ImageEditor.rects!!.isEmpty()) return true
-                        this@ImageEditor.mImageView!!.isEnabled = false
-
-                        val viewX = this@ImageEditor.mImageView!!.x
-                        val viewY = this@ImageEditor.mImageView!!.y
-                        val x = event.x
-                        val y = event.y
-
-                        var currentRect = this@ImageEditor.rects!![0]
-
-                        for(rect in this@ImageEditor.rects!!) {
-                            if(x >= rect.x && x <= rect.x + rect.width &&
-                                    y >= rect.y && y <= rect.y + rect.height) {
-                                currentRect = rect
-                            }
-                        }
-
-                        cutObj(currentRect)
-
-                        return true
-                    }
-                }
-        )
 
         mOpenImageButton = findViewById(R.id.select_image_button)
         mOpenImageButton!!.setOnClickListener {
@@ -145,46 +119,6 @@ class ImageEditor : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_4_0, this, mLoaderCallback)
-    }
-
-    private fun cutObj(rect: Rect) {
-        object: Thread() {
-            override fun run() {
-                val bmp32: Bitmap?
-                try {
-                    bmp32 = sourceImage?.copy(Bitmap.Config.ARGB_8888, false)  //required format for bitmaptomat
-                } catch (e: OutOfMemoryError) {
-                    Toast.makeText(this@ImageEditor, "The image is too large!", Toast.LENGTH_LONG).show()
-                    this@ImageEditor.mFindObjectButton!!.isEnabled = true
-                    return
-                }
-                val frame = Mat(0,0,0)
-                bitmapToMat(bmp32, frame)
-                bitmapToMat(sourceImage, frame)
-                bmp32!!.recycle()
-                val out = frame.clone()
-                Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGBA2RGB)
-                val sharedPreferencesSdk = this@ImageEditor.getSharedPreferences("ndk", Context.MODE_PRIVATE)
-                val usendk = sharedPreferencesSdk.getBoolean("use_ndk", true)
-                when (usendk) {
-                    true -> {
-                        ndkCut(frame, out, rect)
-                    }
-                    false -> {
-                        sdkCut(frame, out, rect)
-                    }
-                }
-                frame.release()
-                val bmp: Bitmap = Bitmap.createBitmap(out.cols(), out.rows(), Bitmap.Config.ARGB_8888)
-                matToBitmap(out, bmp)
-                out.release()
-                this@ImageEditor.runOnUiThread {
-                    this@ImageEditor.currentImage = bmp
-                    genPreview()
-                    this@ImageEditor.mImageView!!.isEnabled = true
-                }
-            }
-        }.start()
     }
 
     private fun getImgFromGallery() {
@@ -339,7 +273,7 @@ class ImageEditor : AppCompatActivity() {
                     return
                 }
                 bmp = null    //avoid filling the heap
-                val frame = Mat(0,0,0)
+                val frame = Mat()
                 bitmapToMat(bmp32, frame)
                 bmp32?.recycle() //avoid filling the heap
                 Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGBA2RGB)
@@ -373,9 +307,9 @@ class ImageEditor : AppCompatActivity() {
                                 val xRightTop = (detections.get(i, 5)[0] * frame.cols()).toInt()
                                 val yRightTop = (detections.get(i, 6)[0] * frame.rows()).toInt()
 
-                                Imgproc.rectangle(frame, Point(xLeftBottom.toDouble(), yLeftBottom.toDouble()),
-                                        Point(xRightTop.toDouble(), yRightTop.toDouble()),
-                                        Scalar(0.0, 255.0, 0.0), RECT_THICKNESS*scaleFactor(frame.cols()))
+//                                Imgproc.rectangle(frame, Point(xLeftBottom.toDouble(), yLeftBottom.toDouble()),
+//                                        Point(xRightTop.toDouble(), yRightTop.toDouble()),
+//                                        Scalar(0.0, 255.0, 0.0), RECT_THICKNESS*scaleFactor(frame.cols()))
 
                                 val w = min(abs(xRightTop-xLeftBottom), frame.width())
                                 val h = min(abs(yLeftBottom-yRightTop), frame.height())
@@ -383,22 +317,22 @@ class ImageEditor : AppCompatActivity() {
                                 val y = if(yRightTop > frame.height()) frame.height() - h else yRightTop - h
                                 this@ImageEditor.rects?.add(Rect(x, y, w, h))
 
-                                val label = classNames[classId] + ": " + String.format("%.2f", confidence)
-                                val baseLine = IntArray(1)
-                                val labelSize = Imgproc.getTextSize(label, Core.FONT_HERSHEY_SIMPLEX,
-                                        FONT_SCALE.toDouble()*scaleFactor(frame.cols()),
-                                        1, baseLine)
-
-                                Imgproc.rectangle(frame, Point(xLeftBottom.toDouble(), yLeftBottom - labelSize.height),
-                                        Point(xLeftBottom + labelSize.width, (yLeftBottom + baseLine[0]).toDouble()),
-                                        Scalar(0.0, 0.0, 0.0), Core.FILLED)
-
-                                Imgproc.putText(frame, label,
-                                        Point(xLeftBottom.toDouble(), yLeftBottom.toDouble()),
-                                        Core.FONT_HERSHEY_SIMPLEX,
-                                        FONT_SCALE.toDouble()*scaleFactor(frame.cols()),
-                                        Scalar(255.0, 255.0, 255.0),
-                                        FONT_THICKNESS*scaleFactor(frame.cols()))
+//                                val label = classNames[classId] + ": " + String.format("%.2f", confidence)
+//                                val baseLine = IntArray(1)
+//                                val labelSize = Imgproc.getTextSize(label, Core.FONT_HERSHEY_SIMPLEX,
+//                                        FONT_SCALE.toDouble()*scaleFactor(frame.cols()),
+//                                        1, baseLine)
+//
+//                                Imgproc.rectangle(frame, Point(xLeftBottom.toDouble(), yLeftBottom - labelSize.height),
+//                                        Point(xLeftBottom + labelSize.width, (yLeftBottom + baseLine[0]).toDouble()),
+//                                        Scalar(0.0, 0.0, 0.0), Core.FILLED)
+//
+//                                Imgproc.putText(frame, label,
+//                                        Point(xLeftBottom.toDouble(), yLeftBottom.toDouble()),
+//                                        Core.FONT_HERSHEY_SIMPLEX,
+//                                        FONT_SCALE.toDouble()*scaleFactor(frame.cols()),
+//                                        Scalar(255.0, 255.0, 255.0),
+//                                        FONT_THICKNESS*scaleFactor(frame.cols()))
                             }
                         }
                         detections.release()
@@ -417,9 +351,9 @@ class ImageEditor : AppCompatActivity() {
                         val classIds : MutableList<Int> = ArrayList()
                         val confs : MutableList<Float> = ArrayList()
 
-                        for (i in 0..result.size - 1){
+                        for (i in 0..(result.size - 1)){
                             val level = result.get(i)
-                            for (j in 0..level.rows() - 1){
+                            for (j in 0..(level.rows() - 1)){
                                 val row = level.row(j)
                                 val scores = row.colRange(5, level.cols())
                                 val mm = Core.minMaxLoc(scores)
@@ -449,14 +383,14 @@ class ImageEditor : AppCompatActivity() {
                         Dnn.NMSBoxes(boxes, confidences, THRESHOLD_YOLO, nmsThresh, indices)
 
                         // Draw result boxes:
-                        val ind = indices.toArray()
-                        for (i in 0..ind.size - 1){
-                            val idx = ind[i]
-                            val box = boxesArray[idx]
-                            Imgproc.rectangle(frame, box.tl(), box.br(),
-                                    Scalar(0.0,0.0,255.0),
-                                    RECT_THICKNESS*scaleFactor(frame.cols()))
-                        }
+//                        val ind = indices.toArray()
+//                        for (i in ind.indices){
+//                            val idx = ind[i]
+//                            val box = boxesArray[idx]
+//                            Imgproc.rectangle(frame, box.tl(), box.br(),
+//                                    Scalar(0.0,0.0,255.0),
+//                                    RECT_THICKNESS*scaleFactor(frame.cols()))
+//                        }
                         for (mat in result){
                             mat.release()
                         }
@@ -470,15 +404,35 @@ class ImageEditor : AppCompatActivity() {
                     return
                 }
                 matToBitmap(frame, bmp)
-//                if(!(this@ImageEditor.rects!!.isEmpty())){
-//                    val out: Mat = frame.clone()//Mat(frame.size(), frame.type())
-//                    cutObj(frame, out, this@ImageEditor.rects!![0])
-//                    bmp = null
-//                    bmp = Bitmap.createBitmap(out.cols(), out.rows(), Bitmap.Config.ARGB_8888)
-//                    matToBitmap(out, bmp)
-//                    out.release()
-//                }
                 frame.release()
+
+                if (rects != null && !rects!!.isEmpty()) {
+                    try {
+                        //Write file
+                        var filename = "bitmap.png"
+                        var stream = this@ImageEditor.openFileOutput(filename, Context.MODE_PRIVATE)
+                        this@ImageEditor.sourceImage!!.compress(Bitmap.CompressFormat.PNG, 100, stream)
+                        stream.close()
+                        filename = "preview.png"
+                        stream = this@ImageEditor.openFileOutput(filename, Context.MODE_PRIVATE)
+                        this@ImageEditor.imagePreview!!.compress(Bitmap.CompressFormat.PNG, 100, stream)
+
+                        //Cleanup
+                        stream.close()
+                    } catch (e : java.lang.Exception) {
+                        e.printStackTrace()
+                    }
+                    val mIntent = Intent(this@ImageEditor, Cutter::class.java)
+                    val rectsData: ArrayList<Int> = ArrayList()
+                    for (rect in rects!!) {
+                        rectsData.add(rect.x)
+                        rectsData.add(rect.y)
+                        rectsData.add(rect.width)
+                        rectsData.add(rect.height)
+                    }
+                    mIntent.putIntegerArrayListExtra("rects", rectsData)
+                    this@ImageEditor.startActivity(mIntent)
+                }
                 this@ImageEditor.runOnUiThread {
                     this@ImageEditor.currentImage = bmp
                     genPreview()
