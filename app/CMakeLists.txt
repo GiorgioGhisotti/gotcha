@@ -46,13 +46,10 @@ target_link_libraries( # Specifies the target library.
         # Links the target library to the log library
         # included in the NDK.
         ${log-lib}
-        lib_opencv
-        libsaliency)
+        lib_opencv)
 
 include_directories  (
         ${pathToOpenCv}/sdk/native/jni/include  )
 
 add_library( lib_opencv SHARED IMPORTED )
 set_target_properties(lib_opencv PROPERTIES IMPORTED_LOCATION ${pathToProject}/app/src/main/jniLibs/${ANDROID_ABI}/libopencv_java3.so)
-add_library( libsaliency SHARED IMPORTED )
-set_target_properties(libsaliency PROPERTIES IMPORTED_LOCATION ${pathToProject}/app/src/main/jniLibs/${ANDROID_ABI}/libsaliency.so)
