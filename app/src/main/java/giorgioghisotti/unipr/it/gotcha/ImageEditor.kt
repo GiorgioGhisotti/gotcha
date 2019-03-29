@@ -36,6 +36,7 @@ import giorgioghisotti.unipr.it.gotcha.Saliency.Companion.sdkCut
 import java.io.ByteArrayOutputStream
 import java.io.FileOutputStream
 import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.min
 
 class ImageEditor : AppCompatActivity() {
@@ -184,10 +185,7 @@ class ImageEditor : AppCompatActivity() {
                     } catch (e: OutOfMemoryError) {
                         Toast.makeText(this, "Sorry, this image is too big!", Toast.LENGTH_LONG).show()
                     }
-                    currentImage = sourceImage
                 } else return
-
-                genPreview()
             } else if(requestCode == RESULT_PICTURE && resultCode == Activity.RESULT_OK){
                 if (data != null && data.data!= null && mImageView != null) {
                     sourceImage = null
@@ -197,13 +195,24 @@ class ImageEditor : AppCompatActivity() {
                     } catch (e: OutOfMemoryError) {
                         Toast.makeText(this, "Sorry, this image is too big!", Toast.LENGTH_LONG).show()
                     }
-                    currentImage = sourceImage
-
-                    genPreview()
                 }
             }
+            val sharedPreferencesScale = this@ImageEditor.getSharedPreferences("scale", Context.MODE_PRIVATE) ?: return
+            val scale = sharedPreferencesScale.getBoolean("scale", true)
+            if (sourceImage != null && max(sourceImage!!.width, sourceImage!!.height) > 1080 && scale) {
+                val scale = 1080.0/max(sourceImage!!.width, sourceImage!!.height).toDouble()
+                sourceImage = Bitmap.createScaledBitmap(
+                        sourceImage!!,
+                        (scale * sourceImage!!.width).toInt(),
+                        (scale * sourceImage!!.height).toInt(),
+                        true
+                )
+            }
+            currentImage = sourceImage
+
+            genPreview()
         } catch (e: Exception) {
-            Toast.makeText(this, "Something went wrong: "+e.toString(), Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Something went wrong: $e", Toast.LENGTH_LONG).show()
         }
 
     }

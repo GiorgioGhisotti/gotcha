@@ -17,11 +17,11 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <Switch
-        android:id="@+id/save_pictures_switch"
+        android:id="@+id/scale_pictures_switch"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:text="@string/save_pictures_switch"
+        android:text="@string/scale_pictures_switch"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/dnn_switch" />
@@ -34,5 +34,5 @@
         android:text="@string/ndk_switch"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/save_pictures_switch" />
+        app:layout_constraintTop_toBottomOf="@+id/scale_pictures_switch" />
 </android.support.constraint.ConstraintLayout>

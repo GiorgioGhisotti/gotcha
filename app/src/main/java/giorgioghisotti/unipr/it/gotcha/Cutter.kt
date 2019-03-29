@@ -1,5 +1,6 @@
 package giorgioghisotti.unipr.it.gotcha
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Bitmap
@@ -7,6 +8,9 @@ import android.graphics.BitmapFactory
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.util.DisplayMetrics
+import android.util.Log
+import android.view.MotionEvent
+import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.ImageView
@@ -27,6 +31,8 @@ class Cutter : AppCompatActivity() {
     private var currentImage: Bitmap? = null
     private var imagePreview: Bitmap? = null
     private var mCutButton: Button? = null
+    private var mLeftArrowButton: Button? = null
+    private var mRightArrowButton: Button? = null
     private var rects: MutableList<Rect>? = null
     private var index: Int = 0
 
@@ -45,6 +51,19 @@ class Cutter : AppCompatActivity() {
                                 mRectIntArray[i+3]
                         ))
                     }
+                    this@Cutter.mLeftArrowButton = findViewById(R.id.left_arrow_button)
+                    this@Cutter.mLeftArrowButton!!.setOnClickListener {
+                        this@Cutter.index--
+                        if (this@Cutter.index < 0) this@Cutter.index = this@Cutter.rects!!.indices.last
+                        this@Cutter.drawRects()
+                    }
+                    this@Cutter.mRightArrowButton = findViewById(R.id.right_arrow_button)
+                    this@Cutter.mRightArrowButton!!.setOnClickListener {
+                        this@Cutter.index++
+                        if (this@Cutter.index > this@Cutter.rects!!.indices.last) this@Cutter.index = 0
+                        this@Cutter.drawRects()
+                    }
+                    this@Cutter.drawRects()
                 }
                 else -> {
                     super.onManagerConnected(status)
@@ -53,6 +72,35 @@ class Cutter : AppCompatActivity() {
         }
     }
 
+    fun drawRects() {
+        val frame = Mat()
+        bitmapToMat(this.imagePreview, frame)
+        val factor = this.imagePreview!!.width.toDouble()/
+                this.sourceImage!!.width.toDouble()
+        for (i in this.rects!!.indices){
+            Imgproc.rectangle(
+                    frame,
+                    Point(
+                            rects!![i].x.toDouble() * factor,
+                            rects!![i].y.toDouble() * factor
+                    ),
+                    Point(
+                            (rects!![i].x.toDouble() + rects!![i].width.toDouble()) * factor,
+                            (rects!![i].y.toDouble() + rects!![i].height.toDouble()) * factor
+                    ),
+                    if (i == index)
+                        Scalar(255.0, 255.0, 127.0)
+                    else
+                        Scalar(127.0, 127.0, 127.0),
+                    8
+            )
+        }
+        matToBitmap(frame, this.imagePreview)
+        frame.release()
+        this.mImageView!!.setImageBitmap(this.imagePreview)
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_cutter)
@@ -67,25 +115,26 @@ class Cutter : AppCompatActivity() {
                 inputStream = this.openFileInput("preview.png")
                 imagePreview = BitmapFactory.decodeStream(inputStream)
                 inputStream.close()
+                inputStream = this.openFileInput("cutout.png")
+                currentImage = BitmapFactory.decodeStream(inputStream)
+                inputStream.close()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
         mImageView!!.setImageBitmap(imagePreview)
+        mImageView!!.setOnTouchListener(object: View.OnTouchListener {
+            override fun onTouch(view: View, motionEvent: MotionEvent): Boolean {
+                Log.d("X", motionEvent.x.toString())
+                Log.d("Y", motionEvent.y.toString())
+                return true
+            }
+        })
 
         mCutButton = findViewById(R.id.cut_button)
         mCutButton!!.setOnClickListener {
             this@Cutter.mCutButton!!.isEnabled = false
             cutObj(rects!![index])
-        }
-    }
-
-    private fun scaleFactor(size: Int) : Int {
-        windowManager.defaultDisplay.getMetrics(DisplayMetrics())
-        return if(size/ (NORMAL_SIZE*DisplayMetrics().density).toInt() < 1) {
-            1
-        } else {
-            size/ (NORMAL_SIZE*DisplayMetrics().density).toInt()
         }
     }
 
@@ -115,9 +164,17 @@ class Cutter : AppCompatActivity() {
                     this@Cutter.genPreview()
                     try {
                         //Write file
-                        val filename = "preview.png"
-                        val stream = this@Cutter.openFileOutput(filename, Context.MODE_PRIVATE)
+                        var filename = "preview.png"
+                        var stream = this@Cutter.openFileOutput(filename, Context.MODE_PRIVATE)
                         this@Cutter.imagePreview!!.compress(Bitmap.CompressFormat.PNG, 100, stream)
+
+                        //Cleanup
+                        stream.close()
+
+                        //Write file
+                        filename = "cutout.png"
+                        stream = this@Cutter.openFileOutput(filename, Context.MODE_PRIVATE)
+                        this@Cutter.currentImage!!.compress(Bitmap.CompressFormat.PNG, 100, stream)
 
                         //Cleanup
                         stream.close()

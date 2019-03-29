@@ -11,6 +11,7 @@ class Settings : AppCompatActivity() {
 
     private var dnnSwitch: Switch? = null
     private var sdkSwitch: Switch? = null
+    private var scalePicturesSwitch: Switch? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +55,27 @@ class Settings : AppCompatActivity() {
                         sharedPreferencesSdk.edit().putBoolean("use_ndk", false).apply()
                     } else {
                         sharedPreferencesSdk.edit().putBoolean("use_ndk", true).apply()
+                    }
+                }
+        ))
+
+        scalePicturesSwitch = findViewById(R.id.scale_pictures_switch)
+        val sharedPreferencesScale = this.getSharedPreferences("scale", Context.MODE_PRIVATE)
+        val scale = sharedPreferencesScale.getBoolean("scale", true)
+        when (scale) {
+            true -> {
+                scalePicturesSwitch?.isChecked = false
+            }
+            false -> {
+                scalePicturesSwitch?.isChecked = true
+            }
+        }
+        scalePicturesSwitch?.setOnCheckedChangeListener(CompoundButton.OnCheckedChangeListener(
+                fun(_: CompoundButton, isChecked: Boolean) {
+                    if (isChecked) {
+                        sharedPreferencesScale.edit().putBoolean("scale", false).apply()
+                    } else {
+                        sharedPreferencesScale.edit().putBoolean("scale", true).apply()
                     }
                 }
         ))
