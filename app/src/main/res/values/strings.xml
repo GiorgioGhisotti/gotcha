@@ -28,6 +28,12 @@
     <string name="cutter_image_view_description">image to cut</string>
     <string name="left_arrow_button"><![CDATA[<]]></string>
     <string name="right_arrow_button"><![CDATA[>]]></string>
+    <string name="export_image_view_description">Image to export</string>
+    <string name="save_image_button">Save as…</string>
+    <string name="cutout_file">cutout.png</string>
+    <string name="preview_file">preview.png</string>
+    <string name="source_file">bitmap.png</string>
+    <string name="default_save_path"><b>Save path:</b>\nPictures</string>
     <string-array name="weights">
         <item>@string/MobileNetSSD_model_file</item>
         <item>@string/MobileNetSSD_config_file</item>

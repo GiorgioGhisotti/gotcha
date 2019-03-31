@@ -103,7 +103,7 @@ class Splash : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         val sharedPreferences: SharedPreferences = this.getSharedPreferences("sp", Context.MODE_PRIVATE)
         if (sharedPreferences.getBoolean("reached_menu", false)) {
-            sharedPreferences.edit().putBoolean("reached_menu", false).commit()
+            sharedPreferences.edit().putBoolean("reached_menu", false).apply()
         }
 
         mVisible = true
@@ -120,7 +120,7 @@ class Splash : AppCompatActivity() {
 
         val sharedPreferences: SharedPreferences = this.getSharedPreferences("sp", Context.MODE_PRIVATE)
         if (sharedPreferences.getBoolean("reached_menu", false)) {
-            sharedPreferences.edit().putBoolean("reached_menu", false).commit()
+            sharedPreferences.edit().putBoolean("reached_menu", false).apply()
             finish()
         }
     }

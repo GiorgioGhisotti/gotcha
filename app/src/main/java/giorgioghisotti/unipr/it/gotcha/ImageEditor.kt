@@ -127,21 +127,11 @@ class ImageEditor : AppCompatActivity() {
         startActivityForResult(galleryIntent, RESULT_LOAD_IMG)
     }
 
-    var currentPhotoPath: String = ""
-
     @Throws(IOException::class)
     private fun createImageFile(): File {
         // Create an image file name
-        val timeStamp: String? = "tmp"//getDateInstance().format(Date())
         val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        return File.createTempFile(
-                "JPEG_${timeStamp}_", /* prefix */
-                ".jpg", /* suffix */
-                storageDir /* directory */
-        ).apply {
-            // Save a file: path for use with ACTION_VIEW intents
-            currentPhotoPath = absolutePath
-        }
+        return File(storageDir?.path + "/tmp.jpg")
     }
 
     private fun dispatchTakePictureIntent() {
@@ -191,7 +181,7 @@ class ImageEditor : AppCompatActivity() {
                     sourceImage = null
                     currentImage = null
                     try {
-                        sourceImage = MediaStore.Images.Media.getBitmap(this.getContentResolver(), data.data)
+                        sourceImage = MediaStore.Images.Media.getBitmap(this.contentResolver, data.data)
                     } catch (e: OutOfMemoryError) {
                         Toast.makeText(this, "Sorry, this image is too big!", Toast.LENGTH_LONG).show()
                     }
@@ -418,15 +408,25 @@ class ImageEditor : AppCompatActivity() {
                 if (rects != null && !rects!!.isEmpty()) {
                     try {
                         //Write file
-                        var filename = "bitmap.png"
-                        var stream = this@ImageEditor.openFileOutput(filename, Context.MODE_PRIVATE)
-                        this@ImageEditor.sourceImage!!.compress(Bitmap.CompressFormat.PNG, 100, stream)
+                        var stream = this@ImageEditor.openFileOutput(
+                                getString(R.string.source_file),
+                                Context.MODE_PRIVATE
+                        )
+                        this@ImageEditor.sourceImage!!.compress(
+                                Bitmap.CompressFormat.PNG,
+                                100,
+                                stream
+                        )
                         stream.close()
-                        filename = "preview.png"
-                        stream = this@ImageEditor.openFileOutput(filename, Context.MODE_PRIVATE)
-                        this@ImageEditor.imagePreview!!.compress(Bitmap.CompressFormat.PNG, 100, stream)
-
-                        //Cleanup
+                        stream = this@ImageEditor.openFileOutput(
+                                getString(R.string.preview_file),
+                                Context.MODE_PRIVATE
+                        )
+                        this@ImageEditor.imagePreview!!.compress(
+                                Bitmap.CompressFormat.PNG,
+                                100,
+                                stream
+                        )
                         stream.close()
                     } catch (e : java.lang.Exception) {
                         e.printStackTrace()
@@ -443,8 +443,6 @@ class ImageEditor : AppCompatActivity() {
                     this@ImageEditor.startActivity(mIntent)
                 }
                 this@ImageEditor.runOnUiThread {
-                    this@ImageEditor.currentImage = bmp
-                    genPreview()
                     this@ImageEditor.mFindObjectButton!!.isEnabled = true
                 }
                 this@ImageEditor.busy = false

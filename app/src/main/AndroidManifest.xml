@@ -29,7 +29,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.NoActionBar">
-        <activity android:name=".Cutter"></activity>
+        <activity android:name=".Export"></activity>
+        <activity android:name=".Cutter" />
         <activity android:name=".Settings" />
         <activity
             android:name=".ImageEditor"

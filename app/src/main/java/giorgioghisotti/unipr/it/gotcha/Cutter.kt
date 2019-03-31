@@ -2,6 +2,7 @@ package giorgioghisotti.unipr.it.gotcha
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -109,15 +110,15 @@ class Cutter : AppCompatActivity() {
         mImageView = findViewById(R.id.cutter_image_view)
         if (imagePreview == null) {
             try {
-                var inputStream = this.openFileInput("bitmap.png")
+                var inputStream = this.openFileInput(getString(R.string.source_file))
                 sourceImage = BitmapFactory.decodeStream(inputStream)
                 inputStream.close()
-                inputStream = this.openFileInput("preview.png")
+                inputStream = this.openFileInput(getString(R.string.preview_file))
                 imagePreview = BitmapFactory.decodeStream(inputStream)
                 inputStream.close()
-                inputStream = this.openFileInput("cutout.png")
-                currentImage = BitmapFactory.decodeStream(inputStream)
-                inputStream.close()
+//                inputStream = this.openFileInput(getString(R.string.cutout_file))
+//                currentImage = BitmapFactory.decodeStream(inputStream)
+//                inputStream.close()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -164,7 +165,7 @@ class Cutter : AppCompatActivity() {
                     this@Cutter.genPreview()
                     try {
                         //Write file
-                        var filename = "preview.png"
+                        var filename = getString(R.string.preview_file)
                         var stream = this@Cutter.openFileOutput(filename, Context.MODE_PRIVATE)
                         this@Cutter.imagePreview!!.compress(Bitmap.CompressFormat.PNG, 100, stream)
 
@@ -172,7 +173,7 @@ class Cutter : AppCompatActivity() {
                         stream.close()
 
                         //Write file
-                        filename = "cutout.png"
+                        filename = getString(R.string.cutout_file)
                         stream = this@Cutter.openFileOutput(filename, Context.MODE_PRIVATE)
                         this@Cutter.currentImage!!.compress(Bitmap.CompressFormat.PNG, 100, stream)
 
@@ -182,6 +183,8 @@ class Cutter : AppCompatActivity() {
                         e.printStackTrace()
                     }
                     this@Cutter.mCutButton!!.isEnabled = true
+                    val mIntent = Intent(this@Cutter, Export::class.java)
+                    this@Cutter.startActivity(mIntent)
                 }
             }
         }.start()
@@ -201,17 +204,7 @@ class Cutter : AppCompatActivity() {
      * Scale image so it can be shown in an ImageView
      */
     private fun genPreview(){
-        if (mImageView == null || currentImage == null) return
-
-        if (mImageView!!.height < currentImage!!.height || mImageView!!.width < currentImage!!.width) {
-            val scale = mImageView!!.height.toFloat() / currentImage!!.height.toFloat()
-            if (currentImage != null) {
-                imagePreview = Bitmap.createScaledBitmap(currentImage!!,
-                        (scale * currentImage!!.width).toInt(),
-                        (scale * currentImage!!.height).toInt(), true)
-            }
-        } else imagePreview = currentImage
-
+        if (mImageView == null) return
         mImageView!!.setImageBitmap(imagePreview)
     }
 
