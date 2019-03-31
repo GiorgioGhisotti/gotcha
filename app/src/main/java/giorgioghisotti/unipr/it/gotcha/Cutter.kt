@@ -144,7 +144,7 @@ class Cutter : AppCompatActivity() {
             override fun run() {
                 val frame = Mat()
                 bitmapToMat(sourceImage, frame)
-                val out = frame.clone()
+                var out = frame.clone()
                 Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGBA2RGB)
                 val sharedPreferencesSdk = this@Cutter.getSharedPreferences("ndk", Context.MODE_PRIVATE)
                 val usendk = sharedPreferencesSdk.getBoolean("use_ndk", true)
@@ -157,6 +157,7 @@ class Cutter : AppCompatActivity() {
                     }
                 }
                 frame.release()
+                out = out.submat(rect)
                 val bmp: Bitmap = Bitmap.createBitmap(out.cols(), out.rows(), Bitmap.Config.ARGB_8888)
                 matToBitmap(out, bmp)
                 out.release()
