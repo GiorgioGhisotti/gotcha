@@ -45,11 +45,15 @@ class Cutter : AppCompatActivity() {
                     this@Cutter.rects = ArrayList()
                     val mRectIntArray = this@Cutter.intent.getIntegerArrayListExtra("rects")
                     for (i in mRectIntArray.indices step 4) {
+                        val x = if (mRectIntArray[i] >= 0) mRectIntArray[i] else 0
+                        val y = if (mRectIntArray[i+1] >= 0) mRectIntArray[i+1] else 0
+                        val width = if (mRectIntArray[i+2] >= 0) mRectIntArray[i+2] else 0
+                        val height = if (mRectIntArray[i+3] >= 0) mRectIntArray[i+3] else 0
                         rects!!.add(Rect(
-                                mRectIntArray[i],
-                                mRectIntArray[i+1],
-                                mRectIntArray[i+2],
-                                mRectIntArray[i+3]
+                                x,
+                                y,
+                                width,
+                                height
                         ))
                     }
                     this@Cutter.mLeftArrowButton = findViewById(R.id.left_arrow_button)
@@ -79,11 +83,13 @@ class Cutter : AppCompatActivity() {
         val factor = this.imagePreview!!.width.toDouble()/
                 this.sourceImage!!.width.toDouble()
         for (i in this.rects!!.indices){
+            val x = rects!![i].x.toDouble()
+            val y = rects!![i].y.toDouble()
             Imgproc.rectangle(
                     frame,
                     Point(
-                            rects!![i].x.toDouble() * factor,
-                            rects!![i].y.toDouble() * factor
+                            x,
+                            y
                     ),
                     Point(
                             (rects!![i].x.toDouble() + rects!![i].width.toDouble()) * factor,
