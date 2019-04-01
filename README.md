@@ -10,7 +10,7 @@ Examples:\
 ![example3](img/example3.jpg?raw=true "Example 3")\
 ![example4](img/example4.jpg?raw=true "Example 4")\
 ![example5](img/example5.jpg?raw=true "Example 5")\
-![example6](img/example6.jpg?raw=true "Example 6")\
+![example6](img/example6.jpg?raw=true "Example 6")
 
 ## How can I build and run it?
 To run this you'll need to install the OpenCV Manager app on your phone.
