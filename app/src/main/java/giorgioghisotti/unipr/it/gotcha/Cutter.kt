@@ -15,6 +15,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.Toast
 import giorgioghisotti.unipr.it.gotcha.Saliency.Companion.ndkCut
 import giorgioghisotti.unipr.it.gotcha.Saliency.Companion.sdkCut
 import org.opencv.android.BaseLoaderCallback
@@ -154,13 +155,18 @@ class Cutter : AppCompatActivity() {
                 Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGBA2RGB)
                 val sharedPreferencesSdk = this@Cutter.getSharedPreferences("ndk", Context.MODE_PRIVATE)
                 val usendk = sharedPreferencesSdk.getBoolean("use_ndk", true)
-                when (usendk) {
-                    true -> {
-                        ndkCut(frame, out, rect)
+                try {
+                    when (usendk) {
+                        true -> {
+                            ndkCut(frame, out, rect)
+                        }
+                        false -> {
+                            sdkCut(frame, out, rect)
+                        }
                     }
-                    false -> {
-                        sdkCut(frame, out, rect)
-                    }
+                } catch (e : Exception) {
+                    Toast.makeText(this@Cutter, "Unfortunately something went wrong...", Toast.LENGTH_LONG).show()
+                    this@Cutter.finish()
                 }
                 frame.release()
                 out = out.submat(rect)

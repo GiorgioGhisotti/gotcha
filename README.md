@@ -1,6 +1,12 @@
 # gotcha
-Android app for object isolation and swapping in photos. Uses OpenCV deep neural networks to distinguish objects and saliency maps to cut them accurately.
 
+## What's this?
+Gotcha is an Android app that finds and extracts objects from pictures, allowing the user to export the resulting image as a png file. It uses OpenCV deep neural networks to distinguish objects and the GrabCut algorithm to extract objects accurately.
+
+Examples:
+[[https://github.com/GiorgioGhisotti/gotcha/master/img/example0.jpg|alt=example0]]
+
+## How can I build and run it?
 To run this you'll need to install the OpenCV Manager app on your phone.
 
 Minimum SDK: 21

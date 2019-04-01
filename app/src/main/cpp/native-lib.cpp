@@ -6,7 +6,7 @@ extern "C" {
 using namespace cv;
 using namespace std;
 
-void Java_giorgioghisotti_unipr_it_gotcha_Saliency_00024Companion_cutObj(
+JNIEXPORT void JNICALL Java_giorgioghisotti_unipr_it_gotcha_Saliency_00024Companion_cutObj(
         JNIEnv *env,
         jobject instance,
         jlong inputImgAddr,
