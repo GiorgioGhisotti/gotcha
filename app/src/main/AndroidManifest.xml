@@ -24,7 +24,7 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/ic_camera_black_512dp"
+        android:icon="@drawable/logomark"
         android:label="Gotcha"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
