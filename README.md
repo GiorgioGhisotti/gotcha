@@ -1,5 +1,9 @@
 # **GOTCHA**
 
+<h1 align=center>
+<img src="logo/horizontal.png" width=40%>
+</h1>
+
 > **Table of contents**
 >
 > * [Description](#description)
