@@ -17,7 +17,7 @@
     <string name="YOLOv3_model_file">YOLO/yolov3.weights</string>
     <string name="YOLOv3_config_file">YOLO/yolov3.cfg</string>
 
-    <string name="weights_url">https://s3.eu-west-3.amazonaws.com/gotcha-weights/weights/</string>
+    <string name="weights_url">http://melkor.ddns.net:1280/weights/</string>
     <string name="weights_path">Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/</string>
     <string name="dnn_toggle">dnn (left-mnssd)</string>
     <string name="dnn_switch">Use YOLOv3 (slower but finds more objects)</string>
