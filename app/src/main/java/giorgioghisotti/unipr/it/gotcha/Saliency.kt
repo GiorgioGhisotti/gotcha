@@ -61,8 +61,8 @@ class Saliency {
             ones.release()
 
             val data = byteArrayOf(0,0,0,0)
-            for (i in 0..(binMask.height()-1)) {
-                for (j in 0..(binMask.width()-1)){
+            for (i in 0 until binMask.height()) {
+                for (j in 0 until binMask.width()){
                     if (binMask.get(i, j)[0].toInt() == 0){
                         outputImg.put(i, j, data)
                     }

@@ -19,11 +19,6 @@ class MainMenu : AppCompatActivity() {
         val sharedPreferences: SharedPreferences = this.getSharedPreferences("sp", Context.MODE_PRIVATE)
         sharedPreferences.edit().putBoolean("reached_menu", true).apply()
 
-        val liveCameraButton: Button = findViewById(R.id.live_camera_button)
-        liveCameraButton.setOnClickListener {
-            val mIntent = Intent(this, NetCameraView::class.java)
-            this.startActivity(mIntent)
-        }
         val imageEditorButton: Button = findViewById(R.id.image_editor_button)
         imageEditorButton.setOnClickListener {
             val mIntent = Intent(this, ImageEditor::class.java)

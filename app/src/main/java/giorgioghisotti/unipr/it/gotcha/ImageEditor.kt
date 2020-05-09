@@ -12,7 +12,6 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
 import androidx.core.content.FileProvider
-import android.util.DisplayMetrics
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.ImageView
@@ -65,8 +64,7 @@ class ImageEditor : AppCompatActivity() {
     private fun initializeNet() {
         val path = sDir + "/" + resources.getString(R.string.weights_path)
         val sharedPreferences = this.getSharedPreferences("dnn", Context.MODE_PRIVATE) ?: return
-        val dnn_type = sharedPreferences.getString("dnn_type", resources.getString(R.string.MobileNetSSD))
-        when (dnn_type) {
+        when (sharedPreferences.getString("dnn_type", resources.getString(R.string.MobileNetSSD))) {
             resources.getString(R.string.MobileNetSSD) -> {
                 val proto = File(path + resources.getString(R.string.MobileNetSSD_config_file)).absolutePath
                 val weights = File(path + resources.getString(R.string.MobileNetSSD_model_file)).absolutePath
@@ -106,7 +104,7 @@ class ImageEditor : AppCompatActivity() {
         if (mImageView != null) mImageView!!.setImageBitmap(imagePreview)
     }
 
-    override fun onConfigurationChanged(newConfig: Configuration?) {
+    override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         genPreview()
     }
@@ -410,8 +408,6 @@ class ImageEditor : AppCompatActivity() {
         }.start()
     }
 
-    private var metrics = DisplayMetrics()
-
     companion object {
         private const val THRESHOLD_MNSSD = 0.5f
         private const val THRESHOLD_YOLO = 0.5f
@@ -423,7 +419,6 @@ class ImageEditor : AppCompatActivity() {
         private const val IN_SCALE_FACTOR_YOLO = 0.00392
         private const val MEAN_VAL_MNSSD = 127.5
         private const val MEAN_VAL_YOLO = 0.0
-        private const val NORMAL_SIZE = 500
 
         private const val RESULT_LOAD_IMG = 1
         private const val RESULT_PICTURE = 2

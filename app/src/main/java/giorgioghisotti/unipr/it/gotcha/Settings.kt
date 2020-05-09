@@ -104,8 +104,4 @@ class Settings : AppCompatActivity() {
             builder.show()
         }
     }
-
-    companion object {
-        const val SAVE_PATH_RESULT = 0
-    }
 }

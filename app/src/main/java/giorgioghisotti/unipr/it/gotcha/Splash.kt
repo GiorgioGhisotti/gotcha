@@ -51,8 +51,8 @@ class Splash : AppCompatActivity() {
             val request: DownloadManager.Request = DownloadManager.Request(
                     Uri.parse(resources.getString(R.string.weights_url) + file_name)
             )
-            request.setDescription("Downloading " + file_name)
-            request.setTitle("Downloading " + file_name)
+            request.setDescription("Downloading $file_name")
+            request.setTitle("Downloading $file_name")
             request.setDestinationInExternalPublicDir(path, file_name)
             manager.enqueue(request)
         }
@@ -63,9 +63,9 @@ class Splash : AppCompatActivity() {
         val files: Vector<File> = Vector()
         for (file_name in weights) {
             val path = sDir + "/" + resources.getString(R.string.weights_path)
-            val weight_file = File(path + file_name)
-            files.addElement(weight_file)
-            if (!weight_file.exists()){
+            val weightFile = File(path + file_name)
+            files.addElement(weightFile)
+            if (!weightFile.exists()){
                 for (file in files) file.delete()
                 downloadWeights()
                 return false
@@ -158,20 +158,20 @@ class Splash : AppCompatActivity() {
          * Whether or not the system UI should be auto-hidden after
          * [AUTO_HIDE_DELAY_MILLIS] milliseconds.
          */
-        private val AUTO_HIDE = true
+        private const val AUTO_HIDE = true
 
         /**
          * If [AUTO_HIDE] is set, the number of milliseconds to wait after
          * user interaction before hiding the system UI.
          */
-        private val AUTO_HIDE_DELAY_MILLIS = 3000
+        private const val AUTO_HIDE_DELAY_MILLIS = 3000
 
         /**
          * Some older devices needs a small delay between UI widget updates
          * and a change of the status and navigation bar.
          */
-        private val UI_ANIMATION_DELAY = 300
+        private const val UI_ANIMATION_DELAY = 300
 
-        private val PERMISSION_REQUEST_CODE = 1
+        private const val PERMISSION_REQUEST_CODE = 1
     }
 }

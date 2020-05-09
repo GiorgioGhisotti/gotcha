@@ -8,7 +8,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.DisplayMetrics
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
@@ -50,12 +49,14 @@ class Cutter : AppCompatActivity() {
                         val y = if (mRectIntArray[i+1] >= 0) mRectIntArray[i+1] else 0
                         val width = if (mRectIntArray[i+2] >= 0) mRectIntArray[i+2] else 0
                         val height = if (mRectIntArray[i+3] >= 0) mRectIntArray[i+3] else 0
-                        rects!!.add(Rect(
+                        rects!!.add(
+                            Rect(
                                 x,
                                 y,
                                 width,
                                 height
-                        ))
+                            )
+                        )
                     }
                     this@Cutter.mLeftArrowButton = findViewById(R.id.left_arrow_button)
                     this@Cutter.mLeftArrowButton!!.setOnClickListener {
@@ -123,9 +124,6 @@ class Cutter : AppCompatActivity() {
                 inputStream = this.openFileInput(getString(R.string.preview_file))
                 imagePreview = BitmapFactory.decodeStream(inputStream)
                 inputStream.close()
-//                inputStream = this.openFileInput(getString(R.string.cutout_file))
-//                currentImage = BitmapFactory.decodeStream(inputStream)
-//                inputStream.close()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -192,7 +190,7 @@ class Cutter : AppCompatActivity() {
 
                         //Cleanup
                         stream.close()
-                    } catch (e : java.lang.Exception) {
+                    } catch (e : Exception) {
                         e.printStackTrace()
                     }
                     this@Cutter.mCutButton!!.isEnabled = true
@@ -203,7 +201,7 @@ class Cutter : AppCompatActivity() {
         }.start()
     }
 
-    override fun onConfigurationChanged(newConfig: Configuration?) {
+    override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         genPreview()
     }
@@ -219,10 +217,5 @@ class Cutter : AppCompatActivity() {
     private fun genPreview(){
         if (mImageView == null) return
         mImageView!!.setImageBitmap(imagePreview)
-    }
-
-    companion object {
-        private const val RECT_THICKNESS = 3
-        private const val NORMAL_SIZE = 500
     }
 }
