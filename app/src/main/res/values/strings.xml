@@ -23,7 +23,8 @@
     <string name="dnn_switch">Use YOLOv3 (slower but finds more objects)</string>
     <string name="scale_pictures_switch">Don\'t scale pictures (VERY SLOW)</string>
     <string name="settings_button">Settings</string>
-    <string name="ndk_switch">use sdk (slower)</string>
+    <string name="ndk_switch">Use sdk (slower)</string>
+    <string name="download_url_button">Set weight files server url</string>
     <string name="cut_button">Cut</string>
     <string name="cutter_image_view_description">image to cut</string>
     <string name="left_arrow_button"><![CDATA[<]]></string>

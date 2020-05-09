@@ -13,8 +13,6 @@ import android.os.Environment
 import android.provider.MediaStore
 import androidx.core.content.FileProvider
 import android.util.DisplayMetrics
-import android.view.MotionEvent
-import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.ImageView
@@ -31,10 +29,6 @@ import org.opencv.imgproc.Imgproc
 import org.opencv.utils.Converters
 import java.io.File
 import java.io.IOException
-import giorgioghisotti.unipr.it.gotcha.Saliency.Companion.ndkCut
-import giorgioghisotti.unipr.it.gotcha.Saliency.Companion.sdkCut
-import java.io.ByteArrayOutputStream
-import java.io.FileOutputStream
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -106,7 +100,7 @@ class ImageEditor : AppCompatActivity() {
         mFindObjectButton!!.setOnClickListener {
             if(!busy) {
                 mFindObjectButton!!.isEnabled = false
-                NetProcessing(net, sourceImage)
+                netProcessing(net, sourceImage)
             }
         }
         if (mImageView != null) mImageView!!.setImageBitmap(imagePreview)
@@ -123,7 +117,7 @@ class ImageEditor : AppCompatActivity() {
     }
 
     private fun getImgFromGallery() {
-        val galleryIntent = Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+        val galleryIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
         startActivityForResult(galleryIntent, RESULT_LOAD_IMG)
     }
 
@@ -176,25 +170,29 @@ class ImageEditor : AppCompatActivity() {
                         Toast.makeText(this, "Sorry, this image is too big!", Toast.LENGTH_LONG).show()
                     }
                 } else return
-            } else if(requestCode == RESULT_PICTURE && resultCode == Activity.RESULT_OK){
-                if (data != null && data.data!= null && mImageView != null) {
-                    sourceImage = null
-                    currentImage = null
-                    try {
-                        sourceImage = MediaStore.Images.Media.getBitmap(this.contentResolver, data.data)
-                    } catch (e: OutOfMemoryError) {
-                        Toast.makeText(this, "Sorry, this image is too big!", Toast.LENGTH_LONG).show()
-                    }
+            } else if(
+                requestCode == RESULT_PICTURE &&
+                resultCode == Activity.RESULT_OK &&
+                data != null &&
+                data.data!= null &&
+                mImageView != null
+            ) {
+                sourceImage = null
+                currentImage = null
+                try {
+                    sourceImage = MediaStore.Images.Media.getBitmap(this.contentResolver, data.data)
+                } catch (e: OutOfMemoryError) {
+                    Toast.makeText(this, "Sorry, this image is too big!", Toast.LENGTH_LONG).show()
                 }
             }
             val sharedPreferencesScale = this@ImageEditor.getSharedPreferences("scale", Context.MODE_PRIVATE) ?: return
             val scale = sharedPreferencesScale.getBoolean("scale", true)
             if (sourceImage != null && max(sourceImage!!.width, sourceImage!!.height) > 1080 && scale) {
-                val scale = 1080.0/max(sourceImage!!.width, sourceImage!!.height).toDouble()
+                val bmpScale = 1080.0/max(sourceImage!!.width, sourceImage!!.height).toDouble()
                 sourceImage = Bitmap.createScaledBitmap(
                         sourceImage!!,
-                        (scale * sourceImage!!.width).toInt(),
-                        (scale * sourceImage!!.height).toInt(),
+                        (bmpScale * sourceImage!!.width).toInt(),
+                        (bmpScale * sourceImage!!.height).toInt(),
                         true
                 )
             }
@@ -226,26 +224,17 @@ class ImageEditor : AppCompatActivity() {
 
     }
 
-    private fun scaleFactor(size: Int) : Int {
-        windowManager.defaultDisplay.getMetrics(metrics)
-        return if(size/ (NORMAL_SIZE*metrics.density).toInt() < 1) {
-            1
-        } else {
-            size/ (NORMAL_SIZE*metrics.density).toInt()
-        }
-    }
-
     private fun getOutputNames(net : Net) : List<String>  {
         val names : MutableList<String> = ArrayList()
 
         val outLayers : List<Int> = net.unconnectedOutLayers.toList()
-        val layersNames : List<String> = net.getLayerNames()
+        val layersNames : List<String> = net.layerNames
 
-        outLayers.forEach{names.add(layersNames.get(it - 1))}
+        outLayers.forEach{names.add(layersNames[it - 1])}
         return names
     }
 
-    private fun NetProcessing(nnet: Net?, bbmp: Bitmap?) {
+    private fun netProcessing(nnet: Net?, bbmp: Bitmap?) {
         val net: Net? = nnet
         var bmp: Bitmap? = bbmp
 
@@ -255,11 +244,7 @@ class ImageEditor : AppCompatActivity() {
             override fun run() {
                 super.run()
                 if (bmp == null || net == null){
-                    this@ImageEditor.runOnUiThread(object: Runnable {
-                        override fun run() {
-                            this@ImageEditor.mFindObjectButton!!.isEnabled = true
-                        }
-                    })
+                    this@ImageEditor.runOnUiThread { this@ImageEditor.mFindObjectButton!!.isEnabled = true }
                     this@ImageEditor.busy = false
                     return
                 }
@@ -280,12 +265,18 @@ class ImageEditor : AppCompatActivity() {
                 this@ImageEditor.rects = ArrayList()
 
                 val sharedPreferencesDnn = this@ImageEditor.getSharedPreferences("dnn", Context.MODE_PRIVATE) ?: return
-                val dnn_type = sharedPreferencesDnn.getString("dnn_type", resources.getString(R.string.MobileNetSSD))
-                when (dnn_type) {
+                when (
+                    sharedPreferencesDnn.getString(
+                            "dnn_type",
+                            resources.getString(R.string.MobileNetSSD)
+                    )) {
                     resources.getString(R.string.MobileNetSSD) -> {
                         val blob: Mat = Dnn.blobFromImage(frame, IN_SCALE_FACTOR_MNSSD,
                                 Size(IN_WIDTH_MNSSD.toDouble(), IN_HEIGHT_MNSSD.toDouble()),
-                                Scalar(MEAN_VAL_MNSSD, MEAN_VAL_MNSSD, MEAN_VAL_MNSSD), true, false)
+                                Scalar(MEAN_VAL_MNSSD, MEAN_VAL_MNSSD, MEAN_VAL_MNSSD),
+                                true,
+                                false
+                        )
                         net.setInput(blob)
 
                         var detections: Mat = net.forward()
@@ -300,38 +291,16 @@ class ImageEditor : AppCompatActivity() {
                             val confidence = detections.get(i, 2)[0]
                             if (confidence > THRESHOLD_MNSSD) {
                                 println("Confidence: $confidence")
-                                val classId = detections.get(i, 1)[0].toInt()
                                 val xLeftBottom = (detections.get(i, 3)[0] * frame.cols()).toInt()
                                 val yLeftBottom = (detections.get(i, 4)[0] * frame.rows()).toInt()
                                 val xRightTop = (detections.get(i, 5)[0] * frame.cols()).toInt()
                                 val yRightTop = (detections.get(i, 6)[0] * frame.rows()).toInt()
-
-//                                Imgproc.rectangle(frame, Point(xLeftBottom.toDouble(), yLeftBottom.toDouble()),
-//                                        Point(xRightTop.toDouble(), yRightTop.toDouble()),
-//                                        Scalar(0.0, 255.0, 0.0), RECT_THICKNESS*scaleFactor(frame.cols()))
 
                                 val w = min(abs(xRightTop-xLeftBottom), frame.width())
                                 val h = min(abs(yLeftBottom-yRightTop), frame.height())
                                 val x = if(xLeftBottom + w > frame.width()) frame.width() - w else xLeftBottom
                                 val y = if(yRightTop > frame.height()) frame.height() - h else yRightTop - h
                                 this@ImageEditor.rects?.add(Rect(x, y, w, h))
-
-//                                val label = classNames[classId] + ": " + String.format("%.2f", confidence)
-//                                val baseLine = IntArray(1)
-//                                val labelSize = Imgproc.getTextSize(label, Core.FONT_HERSHEY_SIMPLEX,
-//                                        FONT_SCALE.toDouble()*scaleFactor(frame.cols()),
-//                                        1, baseLine)
-//
-//                                Imgproc.rectangle(frame, Point(xLeftBottom.toDouble(), yLeftBottom - labelSize.height),
-//                                        Point(xLeftBottom + labelSize.width, (yLeftBottom + baseLine[0]).toDouble()),
-//                                        Scalar(0.0, 0.0, 0.0), Core.FILLED)
-//
-//                                Imgproc.putText(frame, label,
-//                                        Point(xLeftBottom.toDouble(), yLeftBottom.toDouble()),
-//                                        Core.FONT_HERSHEY_SIMPLEX,
-//                                        FONT_SCALE.toDouble()*scaleFactor(frame.cols()),
-//                                        Scalar(255.0, 255.0, 255.0),
-//                                        FONT_THICKNESS*scaleFactor(frame.cols()))
                             }
                         }
                         detections.release()
@@ -350,9 +319,9 @@ class ImageEditor : AppCompatActivity() {
                         val classIds : MutableList<Int> = ArrayList()
                         val confs : MutableList<Float> = ArrayList()
 
-                        for (i in 0..(result.size - 1)){
+                        for (i in 0 until result.size){
                             val level = result.get(i)
-                            for (j in 0..(level.rows() - 1)){
+                            for (j in 0 until level.rows()){
                                 val row = level.row(j)
                                 val scores = row.colRange(5, level.cols())
                                 val mm = Core.minMaxLoc(scores)
@@ -381,15 +350,6 @@ class ImageEditor : AppCompatActivity() {
                         val indices = MatOfInt()
                         Dnn.NMSBoxes(boxes, confidences, THRESHOLD_YOLO, nmsThresh, indices)
 
-                        // Draw result boxes:
-//                        val ind = indices.toArray()
-//                        for (i in ind.indices){
-//                            val idx = ind[i]
-//                            val box = boxesArray[idx]
-//                            Imgproc.rectangle(frame, box.tl(), box.br(),
-//                                    Scalar(0.0,0.0,255.0),
-//                                    RECT_THICKNESS*scaleFactor(frame.cols()))
-//                        }
                         for (mat in result){
                             mat.release()
                         }
@@ -453,7 +413,6 @@ class ImageEditor : AppCompatActivity() {
     private var metrics = DisplayMetrics()
 
     companion object {
-        private const val FONT_SCALE = 1.0f
         private const val THRESHOLD_MNSSD = 0.5f
         private const val THRESHOLD_YOLO = 0.5f
         private const val IN_WIDTH_MNSSD = 300
@@ -464,11 +423,7 @@ class ImageEditor : AppCompatActivity() {
         private const val IN_SCALE_FACTOR_YOLO = 0.00392
         private const val MEAN_VAL_MNSSD = 127.5
         private const val MEAN_VAL_YOLO = 0.0
-        private const val RECT_THICKNESS = 3
-        private const val FONT_THICKNESS = 2
         private const val NORMAL_SIZE = 500
-
-        private val classNames = arrayOf("background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor")
 
         private const val RESULT_LOAD_IMG = 1
         private const val RESULT_PICTURE = 2

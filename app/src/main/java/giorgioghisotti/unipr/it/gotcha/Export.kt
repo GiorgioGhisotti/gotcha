@@ -17,6 +17,9 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 
+/**
+ *  Exports image
+ */
 class Export : AppCompatActivity() {
     private var saveImageButton: Button? = null
     private var exportImageView: ImageView? = null
