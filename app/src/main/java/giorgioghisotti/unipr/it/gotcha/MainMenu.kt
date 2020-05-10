@@ -24,6 +24,12 @@ class MainMenu : AppCompatActivity() {
             val mIntent = Intent(this, ImageEditor::class.java)
             this.startActivity(mIntent)
         }
+        val sharedPreferencesSkipped = this.getSharedPreferences(
+            "skipped",
+            Context.MODE_PRIVATE
+        )
+        if(sharedPreferencesSkipped.getBoolean("skipped", true)) imageEditorButton.isEnabled = false
+
         val settingsButton: Button = findViewById(R.id.settings_button)
         settingsButton.setOnClickListener {
             val mIntent = Intent(this, Settings::class.java)

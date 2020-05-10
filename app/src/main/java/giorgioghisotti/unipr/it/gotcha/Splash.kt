@@ -12,8 +12,10 @@ import android.os.Handler
 import androidx.core.app.ActivityCompat
 import android.view.View
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import kotlinx.android.synthetic.main.activity_splash.*
 import java.io.File
+import java.io.IOException
 import java.util.*
 
 class Splash : AppCompatActivity() {
@@ -41,21 +43,51 @@ class Splash : AppCompatActivity() {
     private val sDir = Environment.getExternalStorageDirectory().absolutePath + "/"
 
     private fun downloadWeights() {
-        val weights: Array<String> = resources.getStringArray(R.array.weights)
-        val sharedPreferences: SharedPreferences = this.getSharedPreferences("sp", Context.MODE_PRIVATE)
-        sharedPreferences.edit().putInt("download_count", weights.size).apply()
-        val manager: DownloadManager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        val sharedPreferencesSkipped = this.getSharedPreferences(
+                "skipped",
+                Context.MODE_PRIVATE
+        )
+        sharedPreferencesSkipped.edit().putBoolean("skipped", false).apply()
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle(
+            "Download neural network weights now?"
+        )
 
-        for(file_name in weights){
-            val path = resources.getString(R.string.weights_path)
-            val request: DownloadManager.Request = DownloadManager.Request(
-                    Uri.parse(resources.getString(R.string.weights_url) + file_name)
-            )
-            request.setDescription("Downloading $file_name")
-            request.setTitle("Downloading $file_name")
-            request.setDestinationInExternalPublicDir(path, file_name)
-            manager.enqueue(request)
+        builder.setPositiveButton("Download") {
+            _, _ -> run {
+                try {
+                    val weights: Array<String> = resources.getStringArray(R.array.weights)
+                    val sharedPreferences: SharedPreferences = this.getSharedPreferences("sp", Context.MODE_PRIVATE)
+                    sharedPreferences.edit().putInt("download_count", weights.size).apply()
+                    val manager: DownloadManager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+
+                    for(file_name in weights){
+                        val path = resources.getString(R.string.weights_path)
+                        val request: DownloadManager.Request = DownloadManager.Request(
+                                Uri.parse(resources.getString(R.string.weights_url) + file_name)
+                        )
+                        request.setDescription("Downloading $file_name")
+                        request.setTitle("Downloading $file_name")
+                        request.setDestinationInExternalPublicDir(path, file_name)
+                        manager.enqueue(request)
+                    }
+                } catch (e: IOException) {
+                    sharedPreferencesSkipped.edit().putBoolean("skipped", true).apply()
+                    Toast.makeText(
+                            this@Splash,
+                            "Could not download files!",
+                            Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
         }
+        builder.setNegativeButton("Skip") {
+            dialog, _ -> dialog.cancel()
+            sharedPreferencesSkipped.edit().putBoolean("skipped", true).apply()
+            val myIntent = Intent(this, MainMenu::class.java)
+            this.startActivity(myIntent)
+        }
+        builder.show()
     }
 
     private fun checkDownloadedWeights() : Boolean {
@@ -71,6 +103,11 @@ class Splash : AppCompatActivity() {
                 return false
             }
         }
+        val sharedPreferencesSkipped = this.getSharedPreferences(
+                "skipped",
+                Context.MODE_PRIVATE
+        )
+        sharedPreferencesSkipped.edit().putBoolean("skipped", false).apply()
         return true
     }
 
