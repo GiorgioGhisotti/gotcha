@@ -69,6 +69,7 @@ class Settings : AppCompatActivity() {
 
         window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
 
+        /** file download urls */
         setDownloadUrlButton = findViewById(R.id.download_url_button)
         val sharedPreferencesDownload = this.getSharedPreferences(
                 "download_url",
@@ -76,30 +77,76 @@ class Settings : AppCompatActivity() {
         )
         setDownloadUrlButton?.setOnClickListener {
             val builder = AlertDialog.Builder(this)
-            builder.setTitle("File name:")
+            builder.setTitle("Weight file server URLs:")
+            val dialogView = this.layoutInflater.inflate(R.layout.url_dialog, null)
 
-            val input = EditText(this)
-            input.inputType = InputType.TYPE_CLASS_TEXT
-            builder.setView(input)
+            val mobileNetSSDModelUrlInput = dialogView.findViewById<EditText>(R.id.MNSSDM)
+            mobileNetSSDModelUrlInput.inputType = InputType.TYPE_CLASS_TEXT
+            mobileNetSSDModelUrlInput.setText(
+                    sharedPreferencesDownload.getString(
+                        resources.getString(R.string.MobileNetSSD_model_name),
+                        resources.getString(R.string.MobileNetSSD_model_file_url)
+                )
+            )
+            val mobileNetSSDConfigUrlInput = dialogView.findViewById<EditText>(R.id.MNSSDC)
+            mobileNetSSDConfigUrlInput.inputType = InputType.TYPE_CLASS_TEXT
+            mobileNetSSDConfigUrlInput.setText(
+                    sharedPreferencesDownload.getString(
+                            resources.getString(R.string.MobileNetSSD_config_name),
+                            resources.getString(R.string.MobileNetSSD_config_file_url)
+                    )
+            )
+            val yoloV3ModelUrlInput = dialogView.findViewById<EditText>(R.id.YV3M)
+            yoloV3ModelUrlInput.inputType = InputType.TYPE_CLASS_TEXT
+            yoloV3ModelUrlInput.setText(
+                    sharedPreferencesDownload.getString(
+                            resources.getString(R.string.YOLOv3_model_name),
+                            resources.getString(R.string.YOLOv3_model_file_url)
+                    )
+            )
+            val yoloV3ConfigUrlInput = dialogView.findViewById<EditText>(R.id.YV3C)
+            yoloV3ConfigUrlInput.inputType = InputType.TYPE_CLASS_TEXT
+            yoloV3ConfigUrlInput.setText(
+                    sharedPreferencesDownload.getString(
+                            resources.getString(R.string.YOLOv3_config_name),
+                            resources.getString(R.string.YOLOv3_config_file_url)
+                    )
+            )
 
+            builder.setView(dialogView)
             builder.setPositiveButton("OK") {
                 _, _ -> run {
-                try {
-                    sharedPreferencesDownload.edit().putString(
-                            "download_url",
-                            input.text.toString()
-                    )
-                } catch (e: IOException) {
-                    Toast.makeText(
-                            this@Settings,
-                            "Could not save file! Make sure this app has storage permissions",
-                            Toast.LENGTH_LONG
-                    ).show()
+                    try {
+                        sharedPreferencesDownload.edit().putString(
+                                resources.getString(R.string.MobileNetSSD_model_name),
+                                mobileNetSSDModelUrlInput.text.toString()
+                        ).apply()
+                        sharedPreferencesDownload.edit().putString(
+                                resources.getString(R.string.MobileNetSSD_config_name),
+                                mobileNetSSDConfigUrlInput.text.toString()
+                        ).apply()
+                        sharedPreferencesDownload.edit().putString(
+                                resources.getString(R.string.YOLOv3_model_name),
+                                yoloV3ModelUrlInput.text.toString()
+                        ).apply()
+                        sharedPreferencesDownload.edit().putString(
+                                resources.getString(R.string.YOLOv3_config_name),
+                                yoloV3ConfigUrlInput.text.toString()
+                        ).apply()
+                    } catch (e: IOException) {
+                        Toast.makeText(
+                                this@Settings,
+                                "Could not update preferences! This is a bug, please report it.",
+                                Toast.LENGTH_LONG
+                        ).show()
+                    }
                 }
-            }
             }
             builder.setNegativeButton("Cancel") {
                 dialog, _ -> dialog.cancel()
+            }
+            builder.setNeutralButton("Defaults"){
+                _, _ -> //TODO
             }
             builder.show()
         }

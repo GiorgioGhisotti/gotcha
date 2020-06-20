@@ -43,6 +43,10 @@ class Splash : AppCompatActivity() {
     private val sDir = Environment.getExternalStorageDirectory().absolutePath + "/"
 
     private fun downloadWeights() {
+        val sharedPreferencesDownload = this.getSharedPreferences(
+                "download_url",
+                Context.MODE_PRIVATE
+        )
         val sharedPreferencesSkipped = this.getSharedPreferences(
                 "skipped",
                 Context.MODE_PRIVATE
@@ -56,19 +60,30 @@ class Splash : AppCompatActivity() {
         builder.setPositiveButton("Download") {
             _, _ -> run {
                 try {
+                    val weightsUrl: Array<String> = resources.getStringArray(R.array.weights_url)
                     val weights: Array<String> = resources.getStringArray(R.array.weights)
+                    val weightsName: Array<String> = resources.getStringArray(R.array.weights_name)
+                    var urls: Array<String?> = arrayOf()
+                    for ((name, url) in weightsName.zip(weightsUrl)) {
+                        urls = urls.plus(
+                            sharedPreferencesDownload.getString(
+                                name,
+                                url
+                            )
+                        )
+                    }
                     val sharedPreferences: SharedPreferences = this.getSharedPreferences("sp", Context.MODE_PRIVATE)
-                    sharedPreferences.edit().putInt("download_count", weights.size).apply()
+                    sharedPreferences.edit().putInt("download_count", weightsUrl.size).apply()
                     val manager: DownloadManager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
 
-                    for(file_name in weights){
+                    for((fileUrl, fileName) in urls.zip(weights)){
                         val path = resources.getString(R.string.weights_path)
                         val request: DownloadManager.Request = DownloadManager.Request(
-                                Uri.parse(resources.getString(R.string.weights_url) + file_name)
+                                Uri.parse(fileUrl)
                         )
-                        request.setDescription("Downloading $file_name")
-                        request.setTitle("Downloading $file_name")
-                        request.setDestinationInExternalPublicDir(path, file_name)
+                        request.setDescription("Receiving from $fileUrl ...")
+                        request.setTitle("Downloading $fileName")
+                        request.setDestinationInExternalPublicDir(path, fileName)
                         manager.enqueue(request)
                     }
                 } catch (e: IOException) {

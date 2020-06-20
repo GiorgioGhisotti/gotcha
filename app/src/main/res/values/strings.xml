@@ -17,7 +17,23 @@
     <string name="YOLOv3_model_file">YOLO/yolov3.weights</string>
     <string name="YOLOv3_config_file">YOLO/yolov3.cfg</string>
 
-    <string name="weights_url">http://melkor.ddns.net:1280/weights/</string>
+    <string name="MobileNetSSD_model_file_url">
+        http://melkor.ddns.net:1280/weights/MobileNetSSD/MobileNetSSD.caffemodel
+    </string>
+    <string name="MobileNetSSD_config_file_url">
+        http://melkor.ddns.net:1280/weights/MobileNetSSD/MobileNetSSD.prototxt
+    </string>
+    <string name="YOLOv3_model_file_url">
+        http://melkor.ddns.net:1280/weights/YOLO/yolov3.weights
+    </string>
+    <string name="YOLOv3_config_file_url">
+        http://melkor.ddns.net:1280/weights/YOLO/yolov3.cfg
+    </string>
+    <string name="MobileNetSSD_model_name">MobileNetSSD Model</string>
+    <string name="MobileNetSSD_config_name">MobileNetSSD Configuration</string>
+    <string name="YOLOv3_model_name">YOLOv3 Model</string>
+    <string name="YOLOv3_config_name">YOLOv3 Config</string>
+
     <string name="weights_path">Android/data/giorgioghisotti.unipr.it.gotcha/files/weights/</string>
     <string name="dnn_switch">Use YOLOv3 (slower but finds more objects)</string>
     <string name="scale_pictures_switch">Don\'t scale pictures (VERY SLOW)</string>
@@ -39,5 +55,17 @@
         <item>@string/MobileNetSSD_config_file</item>
         <item>@string/YOLOv3_model_file</item>
         <item>@string/YOLOv3_config_file</item>
+    </string-array>
+    <string-array name="weights_url">
+        <item>@string/MobileNetSSD_model_file_url</item>
+        <item>@string/MobileNetSSD_config_file_url</item>
+        <item>@string/YOLOv3_model_file_url</item>
+        <item>@string/YOLOv3_config_file_url</item>
+    </string-array>
+    <string-array name="weights_name">
+        <item>@string/MobileNetSSD_model_name</item>
+        <item>@string/MobileNetSSD_config_name</item>
+        <item>@string/YOLOv3_model_name</item>
+        <item>@string/YOLOv3_config_name</item>
     </string-array>
 </resources>
