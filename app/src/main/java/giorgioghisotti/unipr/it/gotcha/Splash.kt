@@ -15,7 +15,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import kotlinx.android.synthetic.main.activity_splash.*
 import java.io.File
-import java.io.IOException
+import java.lang.Exception
 import java.util.*
 
 class Splash : AppCompatActivity() {
@@ -60,6 +60,7 @@ class Splash : AppCompatActivity() {
         builder.setPositiveButton("Download") {
             _, _ -> run {
                 try {
+                    /** Collect url information */
                     val weightsUrl: Array<String> = resources.getStringArray(R.array.weights_url)
                     val weights: Array<String> = resources.getStringArray(R.array.weights)
                     val weightsName: Array<String> = resources.getStringArray(R.array.weights_name)
@@ -76,6 +77,7 @@ class Splash : AppCompatActivity() {
                     sharedPreferences.edit().putInt("download_count", weightsUrl.size).apply()
                     val manager: DownloadManager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
 
+                    /** Download files */
                     for((fileUrl, fileName) in urls.zip(weights)){
                         val path = resources.getString(R.string.weights_path)
                         val request: DownloadManager.Request = DownloadManager.Request(
@@ -86,7 +88,7 @@ class Splash : AppCompatActivity() {
                         request.setDestinationInExternalPublicDir(path, fileName)
                         manager.enqueue(request)
                     }
-                } catch (e: IOException) {
+                } catch (e: Exception) {
                     sharedPreferencesSkipped.edit().putBoolean("skipped", true).apply()
                     Toast.makeText(
                             this@Splash,

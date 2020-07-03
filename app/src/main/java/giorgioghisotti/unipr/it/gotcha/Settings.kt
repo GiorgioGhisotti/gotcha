@@ -114,6 +114,7 @@ class Settings : AppCompatActivity() {
             )
 
             builder.setView(dialogView)
+            /** Confirm new values */
             builder.setPositiveButton("OK") {
                 _, _ -> run {
                     try {
