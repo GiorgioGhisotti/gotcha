@@ -41,8 +41,8 @@ class Settings : AppCompatActivity() {
                 fun(_: CompoundButton, isChecked: Boolean) {
                     if (isChecked) {
                         sharedPreferencesDnn.edit().putString(
-                                "dnn_type",
-                                resources.getString(R.string.YOLO)
+                            "dnn_type",
+                            resources.getString(R.string.YOLO)
                         ).apply()
                     } else {
                         sharedPreferencesDnn.edit().putString("dnn_type", resources.getString(R.string.MobileNetSSD)).apply()
@@ -67,19 +67,21 @@ class Settings : AppCompatActivity() {
         scalePicturesSwitch = findViewById(R.id.scale_pictures_switch)
         val sharedPreferencesScale = this.getSharedPreferences("scale", Context.MODE_PRIVATE)
         scalePicturesSwitch?.isChecked = !sharedPreferencesScale.getBoolean("scale", true)
-        scalePicturesSwitch?.setOnCheckedChangeListener(CompoundButton.OnCheckedChangeListener(
+        scalePicturesSwitch?.setOnCheckedChangeListener(
+            CompoundButton.OnCheckedChangeListener(
                 fun(_: CompoundButton, isChecked: Boolean) {
                     sharedPreferencesScale.edit().putBoolean("scale", !isChecked).apply()
                 }
-        ))
+            )
+        )
 
         window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
 
         /** file download urls */
         setDownloadUrlButton = findViewById(R.id.download_url_button)
         val sharedPreferencesDownload = this.getSharedPreferences(
-                "download_url",
-                Context.MODE_PRIVATE
+            "download_url",
+            Context.MODE_PRIVATE
         )
         setDownloadUrlButton?.setOnClickListener {
             val builder = AlertDialog.Builder(this)
@@ -89,34 +91,34 @@ class Settings : AppCompatActivity() {
             val mobileNetSSDModelUrlInput = dialogView.findViewById<EditText>(R.id.MNSSDM)
             mobileNetSSDModelUrlInput.inputType = InputType.TYPE_CLASS_TEXT
             mobileNetSSDModelUrlInput.setText(
-                    sharedPreferencesDownload.getString(
-                        resources.getString(R.string.MobileNetSSD_model_name),
-                        resources.getString(R.string.MobileNetSSD_model_file_url)
+                sharedPreferencesDownload.getString(
+                    resources.getString(R.string.MobileNetSSD_model_name),
+                    resources.getString(R.string.MobileNetSSD_model_file_url)
                 )
             )
             val mobileNetSSDConfigUrlInput = dialogView.findViewById<EditText>(R.id.MNSSDC)
             mobileNetSSDConfigUrlInput.inputType = InputType.TYPE_CLASS_TEXT
             mobileNetSSDConfigUrlInput.setText(
-                    sharedPreferencesDownload.getString(
-                            resources.getString(R.string.MobileNetSSD_config_name),
-                            resources.getString(R.string.MobileNetSSD_config_file_url)
-                    )
+                sharedPreferencesDownload.getString(
+                    resources.getString(R.string.MobileNetSSD_config_name),
+                    resources.getString(R.string.MobileNetSSD_config_file_url)
+                )
             )
             val yoloV3ModelUrlInput = dialogView.findViewById<EditText>(R.id.YV3M)
             yoloV3ModelUrlInput.inputType = InputType.TYPE_CLASS_TEXT
             yoloV3ModelUrlInput.setText(
-                    sharedPreferencesDownload.getString(
-                            resources.getString(R.string.YOLOv3_model_name),
-                            resources.getString(R.string.YOLOv3_model_file_url)
-                    )
+                sharedPreferencesDownload.getString(
+                    resources.getString(R.string.YOLOv3_model_name),
+                    resources.getString(R.string.YOLOv3_model_file_url)
+                )
             )
             val yoloV3ConfigUrlInput = dialogView.findViewById<EditText>(R.id.YV3C)
             yoloV3ConfigUrlInput.inputType = InputType.TYPE_CLASS_TEXT
             yoloV3ConfigUrlInput.setText(
-                    sharedPreferencesDownload.getString(
-                            resources.getString(R.string.YOLOv3_config_name),
-                            resources.getString(R.string.YOLOv3_config_file_url)
-                    )
+                sharedPreferencesDownload.getString(
+                    resources.getString(R.string.YOLOv3_config_name),
+                    resources.getString(R.string.YOLOv3_config_file_url)
+                )
             )
 
             builder.setView(dialogView)
@@ -125,26 +127,26 @@ class Settings : AppCompatActivity() {
                 _, _ -> run {
                     try {
                         sharedPreferencesDownload.edit().putString(
-                                resources.getString(R.string.MobileNetSSD_model_name),
-                                mobileNetSSDModelUrlInput.text.toString()
+                            resources.getString(R.string.MobileNetSSD_model_name),
+                            mobileNetSSDModelUrlInput.text.toString()
                         ).apply()
                         sharedPreferencesDownload.edit().putString(
-                                resources.getString(R.string.MobileNetSSD_config_name),
-                                mobileNetSSDConfigUrlInput.text.toString()
+                            resources.getString(R.string.MobileNetSSD_config_name),
+                            mobileNetSSDConfigUrlInput.text.toString()
                         ).apply()
                         sharedPreferencesDownload.edit().putString(
-                                resources.getString(R.string.YOLOv3_model_name),
-                                yoloV3ModelUrlInput.text.toString()
+                            resources.getString(R.string.YOLOv3_model_name),
+                            yoloV3ModelUrlInput.text.toString()
                         ).apply()
                         sharedPreferencesDownload.edit().putString(
-                                resources.getString(R.string.YOLOv3_config_name),
-                                yoloV3ConfigUrlInput.text.toString()
+                            resources.getString(R.string.YOLOv3_config_name),
+                            yoloV3ConfigUrlInput.text.toString()
                         ).apply()
                     } catch (e: IOException) {
                         Toast.makeText(
-                                this@Settings,
-                                "Could not update preferences! This is a bug, please report it.",
-                                Toast.LENGTH_LONG
+                            this@Settings,
+                            "Could not update preferences! This is a bug, please report it.",
+                            Toast.LENGTH_LONG
                         ).show()
                     }
                 }
@@ -156,26 +158,26 @@ class Settings : AppCompatActivity() {
                 _, _ -> run {
                     try {
                         sharedPreferencesDownload.edit().putString(
-                                resources.getString(R.string.MobileNetSSD_model_name),
-                                resources.getString(R.string.MobileNetSSD_model_file_url)
+                            resources.getString(R.string.MobileNetSSD_model_name),
+                            resources.getString(R.string.MobileNetSSD_model_file_url)
                         ).apply()
                         sharedPreferencesDownload.edit().putString(
-                                resources.getString(R.string.MobileNetSSD_config_name),
-                                resources.getString(R.string.MobileNetSSD_config_file_url)
+                            resources.getString(R.string.MobileNetSSD_config_name),
+                            resources.getString(R.string.MobileNetSSD_config_file_url)
                         ).apply()
                         sharedPreferencesDownload.edit().putString(
-                                resources.getString(R.string.YOLOv3_model_name),
-                                resources.getString(R.string.YOLOv3_model_file_url)
+                            resources.getString(R.string.YOLOv3_model_name),
+                            resources.getString(R.string.YOLOv3_model_file_url)
                         ).apply()
                         sharedPreferencesDownload.edit().putString(
-                                resources.getString(R.string.YOLOv3_config_name),
-                                resources.getString(R.string.YOLOv3_config_file_url)
+                            resources.getString(R.string.YOLOv3_config_name),
+                            resources.getString(R.string.YOLOv3_config_file_url)
                         ).apply()
                     } catch (e: IOException) {
                         Toast.makeText(
-                                this@Settings,
-                                "Could not update preferences! This is a bug, please report it.",
-                                Toast.LENGTH_LONG
+                            this@Settings,
+                            "Could not update preferences! This is a bug, please report it.",
+                            Toast.LENGTH_LONG
                         ).show()
                     }
                 }
