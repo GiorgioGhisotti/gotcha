@@ -23,10 +23,12 @@ class Settings : AppCompatActivity() {
         /** whether the app should use mobilenetssd or yolov3 */
         dnnSwitch = findViewById(R.id.dnn_switch)
         val sharedPreferencesDnn = this.getSharedPreferences("dnn", Context.MODE_PRIVATE)
-        when (sharedPreferencesDnn.getString(
+        when (
+            sharedPreferencesDnn.getString(
                 "dnn_type",
                 resources.getString(R.string.MobileNetSSD)
-        )) {
+            )
+        ) {
             resources.getString(R.string.MobileNetSSD) -> {
                 dnnSwitch?.isChecked = false
             }
@@ -34,7 +36,8 @@ class Settings : AppCompatActivity() {
                 dnnSwitch?.isChecked = true
             }
         }
-        dnnSwitch?.setOnCheckedChangeListener(CompoundButton.OnCheckedChangeListener(
+        dnnSwitch?.setOnCheckedChangeListener(
+            CompoundButton.OnCheckedChangeListener(
                 fun(_: CompoundButton, isChecked: Boolean) {
                     if (isChecked) {
                         sharedPreferencesDnn.edit().putString(
@@ -45,17 +48,20 @@ class Settings : AppCompatActivity() {
                         sharedPreferencesDnn.edit().putString("dnn_type", resources.getString(R.string.MobileNetSSD)).apply()
                     }
                 }
-        ))
+            )
+        )
 
         /** whether the app should use native code or not */
         sdkSwitch = findViewById(R.id.ndk_switch)
         val sharedPreferencesSdk = this.getSharedPreferences("ndk", Context.MODE_PRIVATE)
         sdkSwitch?.isChecked = !sharedPreferencesSdk.getBoolean("use_ndk", true)
-        sdkSwitch?.setOnCheckedChangeListener(CompoundButton.OnCheckedChangeListener(
+        sdkSwitch?.setOnCheckedChangeListener(
+            CompoundButton.OnCheckedChangeListener(
                 fun(_: CompoundButton, isChecked: Boolean) {
                     sharedPreferencesSdk.edit().putBoolean("use_ndk", !isChecked).apply()
                 }
-        ))
+            )
+        )
 
         /** whether the app should scale pictures for processing */
         scalePicturesSwitch = findViewById(R.id.scale_pictures_switch)
@@ -147,7 +153,32 @@ class Settings : AppCompatActivity() {
                 dialog, _ -> dialog.cancel()
             }
             builder.setNeutralButton("Defaults"){
-                _, _ -> //TODO
+                _, _ -> run {
+                    try {
+                        sharedPreferencesDownload.edit().putString(
+                                resources.getString(R.string.MobileNetSSD_model_name),
+                                resources.getString(R.string.MobileNetSSD_model_file_url)
+                        ).apply()
+                        sharedPreferencesDownload.edit().putString(
+                                resources.getString(R.string.MobileNetSSD_config_name),
+                                resources.getString(R.string.MobileNetSSD_config_file_url)
+                        ).apply()
+                        sharedPreferencesDownload.edit().putString(
+                                resources.getString(R.string.YOLOv3_model_name),
+                                resources.getString(R.string.YOLOv3_model_file_url)
+                        ).apply()
+                        sharedPreferencesDownload.edit().putString(
+                                resources.getString(R.string.YOLOv3_config_name),
+                                resources.getString(R.string.YOLOv3_config_file_url)
+                        ).apply()
+                    } catch (e: IOException) {
+                        Toast.makeText(
+                                this@Settings,
+                                "Could not update preferences! This is a bug, please report it.",
+                                Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
             }
             builder.show()
         }
