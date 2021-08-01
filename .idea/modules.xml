@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" group="gotcha/app" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/gotcha.iml" filepath="$PROJECT_DIR$/.idea/gotcha.iml" group="gotcha" />
-      <module fileurl="file://$PROJECT_DIR$/openCVLibrary343/openCVLibrary343.iml" filepath="$PROJECT_DIR$/openCVLibrary343/openCVLibrary343.iml" group="gotcha/openCVLibrary343" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/gotcha.iml" filepath="$PROJECT_DIR$/.idea/gotcha.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/gotcha.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/gotcha.app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/openCVLibrary343/gotcha.openCVLibrary343.iml" filepath="$PROJECT_DIR$/.idea/modules/openCVLibrary343/gotcha.openCVLibrary343.iml" />
     </modules>
   </component>
 </project>
