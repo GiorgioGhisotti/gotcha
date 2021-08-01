@@ -28,7 +28,7 @@ Gotcha is an Android app that finds and extracts objects from pictures, allowing
 Building and running
 ---
 
-To run this you'll need to install the OpenCV Manager 3.4.3 app on your phone.
+To run this you'll need to install the OpenCV Manager 3.4.3 app on your phone. Only the armeabi-v7a and x86 versions are supported, other APKs will not work.
 
 Minimum SDK: 21
 
